@@ -1,6 +1,7 @@
 import { tokenize } from "./tokenizer.js";
 import { embedToken } from "./embedding.js";
 import { computeAttention } from "./attention.js";
+import { applyPipeline, getPipelineStages } from "./pipeline.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -9,6 +10,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const embeddingTitleEl = document.getElementById("embedding-title");
   const embeddingBarsEl = document.getElementById("embedding-bars");
   const attentionListEl = document.getElementById("attention-list");
+  const pipelineStageEl = document.getElementById("pipeline-stage");
+  const pipelineListEl = document.getElementById("pipeline-list");
 
   if (
     !inputEl ||
@@ -16,7 +19,9 @@ window.addEventListener("DOMContentLoaded", () => {
     !countEl ||
     !embeddingTitleEl ||
     !embeddingBarsEl ||
-    !attentionListEl
+    !attentionListEl ||
+    !pipelineStageEl ||
+    !pipelineListEl
   ) {
     throw new Error("Tokenizer UI: required elements not found.");
   }
@@ -25,6 +30,8 @@ window.addEventListener("DOMContentLoaded", () => {
     tokens: [],
     embeddings: [],
     attentionWeights: [],
+    pipelineOutputs: [],
+    selectedStageId: null,
     selectedIndex: null,
   };
 
@@ -132,6 +139,37 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function renderPipeline() {
+    pipelineListEl.innerHTML = "";
+    if (!state.selectedStageId || state.pipelineOutputs.length === 0) {
+      return;
+    }
+    const stage = state.pipelineOutputs.find((item) => item.id === state.selectedStageId);
+    if (!stage) {
+      return;
+    }
+
+    stage.tokens.forEach((token, index) => {
+      const row = document.createElement("div");
+      row.className = "pipeline-row";
+
+      const indexEl = document.createElement("div");
+      indexEl.className = "token-index";
+      indexEl.textContent = String(index);
+
+      const typeEl = document.createElement("div");
+      typeEl.className = "token-type";
+      typeEl.textContent = token.type;
+
+      const valueEl = document.createElement("div");
+      valueEl.className = "token-value";
+      valueEl.textContent = token.value;
+
+      row.append(indexEl, typeEl, valueEl);
+      pipelineListEl.appendChild(row);
+    });
+  }
+
   function update() {
     const input = inputEl.value;
     let tokens = [];
@@ -149,19 +187,27 @@ window.addEventListener("DOMContentLoaded", () => {
 
     state.tokens = tokens;
     state.embeddings = tokens.map((token) => embedToken(token.value));
+    const pipeline = applyPipeline(tokens);
+    state.pipelineOutputs = pipeline.outputs;
     if (tokens.length === 0) {
       state.selectedIndex = null;
       state.attentionWeights = [];
+      state.selectedStageId = null;
     } else if (state.selectedIndex === null || !tokens[state.selectedIndex]) {
       state.selectedIndex = 0;
       state.attentionWeights = computeAttention(tokens, 0);
+      state.selectedStageId = pipeline.outputs[pipeline.outputs.length - 1].id;
     } else {
       state.attentionWeights = computeAttention(tokens, state.selectedIndex);
+      if (!state.selectedStageId) {
+        state.selectedStageId = pipeline.outputs[pipeline.outputs.length - 1].id;
+      }
     }
 
     renderTokens(tokens);
     renderEmbedding();
     renderAttention();
+    renderPipeline();
   }
 
   tokenListEl.addEventListener("click", (event) => {
@@ -185,6 +231,24 @@ window.addEventListener("DOMContentLoaded", () => {
   inputEl.addEventListener("change", update);
   inputEl.addEventListener("keyup", update);
 
+  const stages = getPipelineStages();
+  pipelineStageEl.innerHTML = "";
+  stages.forEach((stage) => {
+    const option = document.createElement("option");
+    option.value = stage.id;
+    option.textContent = stage.name;
+    pipelineStageEl.appendChild(option);
+  });
+
+  pipelineStageEl.addEventListener("change", () => {
+    state.selectedStageId = pipelineStageEl.value;
+    renderPipeline();
+  });
+
   inputEl.value = "Hello, world!\nTokenize this: A_B test.";
   update();
+
+  if (state.selectedStageId) {
+    pipelineStageEl.value = state.selectedStageId;
+  }
 });

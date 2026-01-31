@@ -240,3 +240,45 @@ textarea {
   font-family: "Courier New", monospace;
   color: var(--muted);
 }
+
+.pipeline-panel {
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+}
+
+.pipeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.pipeline-title {
+  font-weight: 600;
+}
+
+.pipeline-select {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: #fff;
+  font-size: 13px;
+}
+
+.pipeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pipeline-row {
+  display: grid;
+  grid-template-columns: 60px 80px 1fr;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #f6f3ed;
+  border: 1px solid #efe7da;
+  font-size: 13px;
+}
