@@ -35,6 +35,13 @@ window.addEventListener("DOMContentLoaded", () => {
   const generationCurrentEl = document.getElementById("generation-current");
   const generationProbListEl = document.getElementById("generation-prob-list");
   const generationAttentionListEl = document.getElementById("generation-attention-list");
+  const replayStatusEl = document.getElementById("replay-status");
+  const replayPlayEl = document.getElementById("replay-play");
+  const replayPauseEl = document.getElementById("replay-pause");
+  const replayStepEl = document.getElementById("replay-step");
+  const replaySpeedEl = document.getElementById("replay-speed");
+  const replayExitEl = document.getElementById("replay-exit");
+  const replayOutputEl = document.getElementById("replay-output");
 
   if (
     !inputEl ||
@@ -64,7 +71,14 @@ window.addEventListener("DOMContentLoaded", () => {
     !generationStepCountEl ||
     !generationCurrentEl ||
     !generationProbListEl ||
-    !generationAttentionListEl
+    !generationAttentionListEl ||
+    !replayStatusEl ||
+    !replayPlayEl ||
+    !replayPauseEl ||
+    !replayStepEl ||
+    !replaySpeedEl ||
+    !replayExitEl ||
+    !replayOutputEl
   ) {
     throw new Error("Tokenizer UI: required elements not found.");
   }
@@ -90,6 +104,10 @@ window.addEventListener("DOMContentLoaded", () => {
     generationTimer: null,
     generationDistributions: [],
     generationAttentionSteps: [],
+    replaySnapshot: null,
+    replayIndex: 0,
+    replayTimer: null,
+    replaySpeed: 1,
   };
 
   function renderEmbedding() {
@@ -353,6 +371,41 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function renderReplay() {
+    replayOutputEl.innerHTML = "";
+    if (!state.replaySnapshot) {
+      replayStatusEl.textContent = "Idle";
+      return;
+    }
+    replayStatusEl.textContent = `Replaying step ${state.replayIndex}/${state.replaySnapshot.generatedTokens.length}`;
+    const shown = state.replaySnapshot.generatedTokens.slice(0, state.replayIndex);
+    shown.forEach((token) => {
+      const chip = document.createElement("div");
+      chip.className = "generation-token";
+      chip.textContent = token.value;
+      replayOutputEl.appendChild(chip);
+    });
+  }
+
+  function stopReplay() {
+    if (state.replayTimer) {
+      clearInterval(state.replayTimer);
+      state.replayTimer = null;
+    }
+  }
+
+  function stepReplay() {
+    if (!state.replaySnapshot) {
+      return;
+    }
+    if (state.replayIndex >= state.replaySnapshot.generatedTokens.length) {
+      stopReplay();
+      return;
+    }
+    state.replayIndex += 1;
+    renderReplay();
+  }
+
   function stopGeneration() {
     if (state.generationTimer) {
       clearInterval(state.generationTimer);
@@ -442,6 +495,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderContextWindow();
     renderSampling();
     resetGeneration();
+    renderReplay();
   }
 
   function buildRunSnapshot() {
@@ -526,6 +580,9 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     state.replayMode = true;
     applyRunSnapshot(snapshot);
+    state.replaySnapshot = snapshot;
+    state.replayIndex = 0;
+    renderReplay();
   }
 
   tokenListEl.addEventListener("click", (event) => {
@@ -611,6 +668,41 @@ window.addEventListener("DOMContentLoaded", () => {
     replayRun();
   });
 
+  replayPlayEl.addEventListener("click", () => {
+    if (!state.replaySnapshot || state.replayTimer) {
+      return;
+    }
+    const interval = Math.max(50, 400 / state.replaySpeed);
+    state.replayTimer = setInterval(() => {
+      stepReplay();
+    }, interval);
+  });
+
+  replayPauseEl.addEventListener("click", () => {
+    stopReplay();
+  });
+
+  replayStepEl.addEventListener("click", () => {
+    stepReplay();
+  });
+
+  replaySpeedEl.addEventListener("input", () => {
+    const parsed = Number.parseFloat(replaySpeedEl.value);
+    state.replaySpeed = Number.isNaN(parsed) ? 1 : Math.max(parsed, 0.2);
+    if (state.replayTimer) {
+      stopReplay();
+    }
+  });
+
+  replayExitEl.addEventListener("click", () => {
+    stopReplay();
+    state.replayMode = false;
+    state.replaySnapshot = null;
+    state.replayIndex = 0;
+    replayOutputEl.innerHTML = "";
+    replayStatusEl.textContent = "Idle";
+  });
+
   generationPlayEl.addEventListener("click", () => {
     if (state.generationTimer) {
       return;
@@ -633,6 +725,7 @@ window.addEventListener("DOMContentLoaded", () => {
   samplingSeedEl.value = String(state.samplingSeed);
   samplingTempEl.value = String(state.samplingTemp);
   samplingRandomEl.value = String(state.samplingRandom);
+  replaySpeedEl.value = String(state.replaySpeed);
   update();
 
   if (state.selectedStageId) {
