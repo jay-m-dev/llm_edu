@@ -34,6 +34,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const generationStepCountEl = document.getElementById("generation-step");
   const generationCurrentEl = document.getElementById("generation-current");
   const generationProbListEl = document.getElementById("generation-prob-list");
+  const generationAttentionListEl = document.getElementById("generation-attention-list");
 
   if (
     !inputEl ||
@@ -62,7 +63,8 @@ window.addEventListener("DOMContentLoaded", () => {
     !generationOutputEl ||
     !generationStepCountEl ||
     !generationCurrentEl ||
-    !generationProbListEl
+    !generationProbListEl ||
+    !generationAttentionListEl
   ) {
     throw new Error("Tokenizer UI: required elements not found.");
   }
@@ -87,6 +89,7 @@ window.addEventListener("DOMContentLoaded", () => {
     generatedTokens: [],
     generationTimer: null,
     generationDistributions: [],
+    generationAttentionSteps: [],
   };
 
   function renderEmbedding() {
@@ -287,6 +290,7 @@ window.addEventListener("DOMContentLoaded", () => {
   function renderGeneration() {
     generationOutputEl.innerHTML = "";
     generationProbListEl.innerHTML = "";
+    generationAttentionListEl.innerHTML = "";
     state.generatedTokens.forEach((token) => {
       const chip = document.createElement("div");
       chip.className = "generation-token";
@@ -305,23 +309,48 @@ window.addEventListener("DOMContentLoaded", () => {
       row.className = "generation-prob-row";
       row.textContent = "No probabilities yet.";
       generationProbListEl.appendChild(row);
-      return;
+    } else {
+      const lastDistribution =
+        state.generationDistributions[state.generationDistributions.length - 1];
+      lastDistribution.forEach((value, index) => {
+        const row = document.createElement("div");
+        row.className = "generation-prob-row";
+
+        const label = document.createElement("div");
+        label.textContent = state.tokens[index]?.value ?? "-";
+
+        const valueEl = document.createElement("div");
+        valueEl.className = "sampling-value";
+        valueEl.textContent = value.toFixed(2);
+
+        row.append(label, valueEl);
+        generationProbListEl.appendChild(row);
+      });
     }
-    const lastDistribution = state.generationDistributions[state.generationDistributions.length - 1];
-    lastDistribution.forEach((value, index) => {
+
+    if (state.generationAttentionSteps.length === 0) {
       const row = document.createElement("div");
       row.className = "generation-prob-row";
+      row.textContent = "No attention yet.";
+      generationAttentionListEl.appendChild(row);
+    } else {
+      const lastAttention =
+        state.generationAttentionSteps[state.generationAttentionSteps.length - 1];
+      lastAttention.forEach((value, index) => {
+        const row = document.createElement("div");
+        row.className = "generation-prob-row";
 
-      const label = document.createElement("div");
-      label.textContent = state.tokens[index]?.value ?? "-";
+        const label = document.createElement("div");
+        label.textContent = state.tokens[index]?.value ?? "-";
 
-      const valueEl = document.createElement("div");
-      valueEl.className = "sampling-value";
-      valueEl.textContent = value.toFixed(2);
+        const valueEl = document.createElement("div");
+        valueEl.className = "sampling-value";
+        valueEl.textContent = value.toFixed(2);
 
-      row.append(label, valueEl);
-      generationProbListEl.appendChild(row);
-    });
+        row.append(label, valueEl);
+        generationAttentionListEl.appendChild(row);
+      });
+    }
   }
 
   function stopGeneration() {
@@ -336,6 +365,7 @@ window.addEventListener("DOMContentLoaded", () => {
     state.generationIndex = 0;
     state.generatedTokens = [];
     state.generationDistributions = [];
+    state.generationAttentionSteps = [];
     renderGeneration();
   }
 
@@ -350,8 +380,10 @@ window.addEventListener("DOMContentLoaded", () => {
       temperature: state.samplingTemp,
       randomness: state.samplingRandom,
     });
+    const attention = computeAttention(state.tokens, state.generationIndex);
     state.generatedTokens.push(token);
     state.generationDistributions.push(distribution);
+    state.generationAttentionSteps.push(attention);
     state.generationIndex += 1;
     renderGeneration();
   }
@@ -429,6 +461,10 @@ window.addEventListener("DOMContentLoaded", () => {
       contextDropped: state.contextDropped,
       samplingDistribution: state.samplingDistribution,
       samplingSelectedIndex: state.samplingSelectedIndex,
+      generationIndex: state.generationIndex,
+      generatedTokens: state.generatedTokens,
+      generationDistributions: state.generationDistributions,
+      generationAttentionSteps: state.generationAttentionSteps,
     };
   }
 
@@ -453,6 +489,10 @@ window.addEventListener("DOMContentLoaded", () => {
     state.contextDropped = snapshot.contextDropped;
     state.samplingDistribution = snapshot.samplingDistribution;
     state.samplingSelectedIndex = snapshot.samplingSelectedIndex;
+    state.generationIndex = snapshot.generationIndex ?? 0;
+    state.generatedTokens = snapshot.generatedTokens ?? [];
+    state.generationDistributions = snapshot.generationDistributions ?? [];
+    state.generationAttentionSteps = snapshot.generationAttentionSteps ?? [];
 
     if (state.selectedStageId) {
       pipelineStageEl.value = state.selectedStageId;
