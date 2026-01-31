@@ -39,6 +39,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const generationCurrentEl = document.getElementById("generation-current");
   const generationProbListEl = document.getElementById("generation-prob-list");
   const generationAttentionListEl = document.getElementById("generation-attention-list");
+  const attentionHeatmapEl = document.getElementById("attention-heatmap");
+  const attentionHeatmapLabelsEl = document.getElementById("attention-heatmap-labels");
   const replayStatusEl = document.getElementById("replay-status");
   const replayPlayEl = document.getElementById("replay-play");
   const replayPauseEl = document.getElementById("replay-pause");
@@ -88,6 +90,8 @@ window.addEventListener("DOMContentLoaded", () => {
     !generationCurrentEl ||
     !generationProbListEl ||
     !generationAttentionListEl ||
+    !attentionHeatmapEl ||
+    !attentionHeatmapLabelsEl ||
     !replayStatusEl ||
     !replayPlayEl ||
     !replayPauseEl ||
@@ -350,6 +354,8 @@ window.addEventListener("DOMContentLoaded", () => {
     generationOutputEl.innerHTML = "";
     generationProbListEl.innerHTML = "";
     generationAttentionListEl.innerHTML = "";
+    attentionHeatmapEl.innerHTML = "";
+    attentionHeatmapLabelsEl.innerHTML = "";
     state.generatedTokens.forEach((token) => {
       const chip = document.createElement("div");
       chip.className = "generation-token";
@@ -417,6 +423,20 @@ window.addEventListener("DOMContentLoaded", () => {
 
         row.append(label, valueEl);
         generationAttentionListEl.appendChild(row);
+      });
+
+      lastAttention.forEach((value, index) => {
+        const cell = document.createElement("div");
+        cell.className = "heatmap-cell";
+        cell.title = `${state.tokens[index]?.value ?? "-"}: ${value.toFixed(2)}`;
+        const intensity = Math.round(180 + value * 75);
+        cell.style.background = `rgb(${intensity}, ${150}, ${220})`;
+        attentionHeatmapEl.appendChild(cell);
+
+        const label = document.createElement("div");
+        label.className = "heatmap-label";
+        label.textContent = state.tokens[index]?.value?.[0] ?? "-";
+        attentionHeatmapLabelsEl.appendChild(label);
       });
     }
   }
