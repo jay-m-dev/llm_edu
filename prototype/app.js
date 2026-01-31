@@ -26,6 +26,12 @@ window.addEventListener("DOMContentLoaded", () => {
   const runSaveEl = document.getElementById("run-save");
   const runReplayEl = document.getElementById("run-replay");
   const replayIndicatorEl = document.getElementById("replay-indicator");
+  const generationPlayEl = document.getElementById("generation-play");
+  const generationPauseEl = document.getElementById("generation-pause");
+  const generationStepEl = document.getElementById("generation-step-btn");
+  const generationOutputEl = document.getElementById("generation-output");
+  const generationStepCountEl = document.getElementById("generation-step");
+  const generationCurrentEl = document.getElementById("generation-current");
 
   if (
     !inputEl ||
@@ -47,7 +53,13 @@ window.addEventListener("DOMContentLoaded", () => {
     !samplingResultEl ||
     !runSaveEl ||
     !runReplayEl ||
-    !replayIndicatorEl
+    !replayIndicatorEl ||
+    !generationPlayEl ||
+    !generationPauseEl ||
+    !generationStepEl ||
+    !generationOutputEl ||
+    !generationStepCountEl ||
+    !generationCurrentEl
   ) {
     throw new Error("Tokenizer UI: required elements not found.");
   }
@@ -68,6 +80,9 @@ window.addEventListener("DOMContentLoaded", () => {
     selectedStageId: null,
     selectedIndex: null,
     replayMode: false,
+    generationIndex: 0,
+    generatedTokens: [],
+    generationTimer: null,
   };
 
   function renderEmbedding() {
@@ -265,6 +280,47 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function renderGeneration() {
+    generationOutputEl.innerHTML = "";
+    state.generatedTokens.forEach((token) => {
+      const chip = document.createElement("div");
+      chip.className = "generation-token";
+      chip.textContent = token.value;
+      generationOutputEl.appendChild(chip);
+    });
+    generationStepCountEl.textContent = String(state.generatedTokens.length);
+    const currentToken =
+      state.generatedTokens.length > 0
+        ? state.generatedTokens[state.generatedTokens.length - 1].value
+        : "-";
+    generationCurrentEl.textContent = currentToken;
+  }
+
+  function stopGeneration() {
+    if (state.generationTimer) {
+      clearInterval(state.generationTimer);
+      state.generationTimer = null;
+    }
+  }
+
+  function resetGeneration() {
+    stopGeneration();
+    state.generationIndex = 0;
+    state.generatedTokens = [];
+    renderGeneration();
+  }
+
+  function stepGeneration() {
+    if (state.generationIndex >= state.tokens.length) {
+      stopGeneration();
+      return;
+    }
+    const token = state.tokens[state.generationIndex];
+    state.generatedTokens.push(token);
+    state.generationIndex += 1;
+    renderGeneration();
+  }
+
   function updateSamplingDistribution() {
     state.samplingDistribution = buildDistribution(state.tokens, {
       seed: state.samplingSeed,
@@ -318,6 +374,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderPipeline();
     renderContextWindow();
     renderSampling();
+    resetGeneration();
   }
 
   function buildRunSnapshot() {
@@ -477,6 +534,23 @@ window.addEventListener("DOMContentLoaded", () => {
 
   runReplayEl.addEventListener("click", () => {
     replayRun();
+  });
+
+  generationPlayEl.addEventListener("click", () => {
+    if (state.generationTimer) {
+      return;
+    }
+    state.generationTimer = setInterval(() => {
+      stepGeneration();
+    }, 300);
+  });
+
+  generationPauseEl.addEventListener("click", () => {
+    stopGeneration();
+  });
+
+  generationStepEl.addEventListener("click", () => {
+    stepGeneration();
   });
 
   inputEl.value = "Hello, world!\nTokenize this: A_B test.";

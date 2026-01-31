@@ -83,6 +83,22 @@
             <div id="sampling-result" class="sampling-result">No sample yet.</div>
             <div id="sampling-list" class="sampling-list"></div>
           </div>
+
+          <div id="generation-panel" class="generation-panel">
+            <div class="generation-header">
+              <div class="generation-title">Token-by-Token</div>
+              <div class="generation-status">
+                Step: <span id="generation-step">0</span>
+                | Current: <span id="generation-current">-</span>
+              </div>
+            </div>
+            <div class="generation-controls">
+              <button id="generation-play" class="generation-button" type="button">Play</button>
+              <button id="generation-pause" class="generation-button" type="button">Pause</button>
+              <button id="generation-step-btn" class="generation-button" type="button">Step</button>
+            </div>
+            <div id="generation-output" class="generation-output"></div>
+          </div>
         </section>
       </div>
     </div>
