@@ -97,6 +97,24 @@ textarea {
   margin-bottom: 12px;
 }
 
+.sandbox-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sandbox-banner {
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd8f3;
+  background: #eef2ff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3348a1;
+}
+
 .context-label {
   font-weight: 600;
   font-size: 13px;

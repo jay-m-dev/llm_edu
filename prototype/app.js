@@ -56,6 +56,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const lockContextBadgeEl = document.getElementById("lock-context-size");
   const lockTempBadgeEl = document.getElementById("lock-sampling-temp");
   const lockRandomBadgeEl = document.getElementById("lock-sampling-random");
+  const sandboxToggleEl = document.getElementById("sandbox-mode");
+  const sandboxBannerEl = document.getElementById("sandbox-banner");
 
   if (
     !inputEl ||
@@ -102,7 +104,9 @@ window.addEventListener("DOMContentLoaded", () => {
     !unlockToastEl ||
     !lockContextBadgeEl ||
     !lockTempBadgeEl ||
-    !lockRandomBadgeEl
+    !lockRandomBadgeEl ||
+    !sandboxToggleEl ||
+    !sandboxBannerEl
   ) {
     throw new Error("Tokenizer UI: required elements not found.");
   }
@@ -136,6 +140,7 @@ window.addEventListener("DOMContentLoaded", () => {
     diagnostics: [],
     scores: [],
     unlockState: { ...defaultUnlocks },
+    sandboxMode: false,
   };
 
   const unlockRules = {
@@ -425,6 +430,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function renderObjectives() {
     objectivesListEl.innerHTML = "";
+    if (state.sandboxMode) {
+      const row = document.createElement("div");
+      row.className = "objective-row";
+      row.textContent = "Sandbox mode: objectives disabled.";
+      objectivesListEl.appendChild(row);
+      return;
+    }
     if (state.objectives.length === 0) {
       const row = document.createElement("div");
       row.className = "objective-row";
@@ -489,6 +501,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function renderScores() {
     scoresListEl.innerHTML = "";
+    if (state.sandboxMode) {
+      const row = document.createElement("div");
+      row.className = "score-row";
+      row.textContent = "Sandbox mode: scoring disabled.";
+      scoresListEl.appendChild(row);
+      return;
+    }
     if (state.scores.length === 0) {
       const row = document.createElement("div");
       row.className = "score-row";
@@ -545,7 +564,7 @@ window.addEventListener("DOMContentLoaded", () => {
     };
 
     Object.keys(inputs).forEach((key) => {
-      const unlocked = state.unlockState[key];
+      const unlocked = state.sandboxMode ? true : state.unlockState[key];
       inputs[key].disabled = !unlocked;
       inputs[key].classList.toggle("locked-input", !unlocked);
       badges[key].style.display = unlocked ? "none" : "inline-block";
@@ -557,6 +576,9 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function applyUnlockResults(results) {
+    if (state.sandboxMode) {
+      return;
+    }
     const { state: nextState, unlocked } = applyUnlocks(
       state.unlockState,
       results,
@@ -750,13 +772,15 @@ window.addEventListener("DOMContentLoaded", () => {
   function saveRun() {
     const snapshot = buildRunSnapshot();
     localStorage.setItem("llm-edu:lastRun", JSON.stringify(snapshot));
-    state.objectives = evaluateObjectives(snapshot);
+    if (!state.sandboxMode) {
+      state.objectives = evaluateObjectives(snapshot);
+      state.scores = scoreRun(snapshot);
+      applyUnlockResults(state.objectives);
+    }
     state.diagnostics = detectFailures(snapshot);
-    state.scores = scoreRun(snapshot);
     renderObjectives();
     renderDiagnostics();
     renderScores();
-    applyUnlockResults(state.objectives);
   }
 
   function replayRun() {
@@ -881,6 +905,14 @@ window.addEventListener("DOMContentLoaded", () => {
     renderScores();
   });
 
+  sandboxToggleEl.addEventListener("change", () => {
+    state.sandboxMode = sandboxToggleEl.checked;
+    sandboxBannerEl.hidden = !state.sandboxMode;
+    objectivesEvaluateEl.disabled = state.sandboxMode;
+    scoresEvaluateEl.disabled = state.sandboxMode;
+    applyLockState();
+  });
+
   replayPlayEl.addEventListener("click", () => {
     if (!state.replaySnapshot || state.replayTimer) {
       return;
@@ -954,6 +986,8 @@ window.addEventListener("DOMContentLoaded", () => {
       state.unlockState = { ...defaultUnlocks };
     }
   }
+  sandboxToggleEl.checked = state.sandboxMode;
+  sandboxBannerEl.hidden = !state.sandboxMode;
   applyLockState();
   update();
 
