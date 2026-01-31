@@ -24,8 +24,12 @@
             <span>Tokens</span>
             <span>Count: <span id="token-count">0</span></span>
           </div>
+          <div id="unlock-toast" class="unlock-toast" hidden></div>
           <div class="context-controls">
-            <label class="context-label" for="context-size">Context size</label>
+            <label class="context-label" for="context-size">
+              Context size
+              <span id="lock-context-size" class="lock-badge">Locked</span>
+            </label>
             <input id="context-size" class="context-input" type="number" min="0" max="200" value="12" />
           </div>
           <div id="token-list" class="token-list"></div>
@@ -70,9 +74,15 @@
             <div class="sampling-controls">
               <label class="sampling-label" for="sampling-seed">Seed</label>
               <input id="sampling-seed" class="sampling-input" type="number" value="12345" />
-              <label class="sampling-label" for="sampling-temp">Temperature</label>
+              <label class="sampling-label" for="sampling-temp">
+                Temperature
+                <span id="lock-sampling-temp" class="lock-badge">Locked</span>
+              </label>
               <input id="sampling-temp" class="sampling-input" type="number" step="0.1" min="0.1" value="1" />
-              <label class="sampling-label" for="sampling-random">Randomness</label>
+              <label class="sampling-label" for="sampling-random">
+                Randomness
+                <span id="lock-sampling-random" class="lock-badge">Locked</span>
+              </label>
               <input id="sampling-random" class="sampling-input" type="number" step="0.05" min="0" max="1" value="0.2" />
               <button id="sampling-run" class="sampling-button" type="button">Sample</button>
             </div>

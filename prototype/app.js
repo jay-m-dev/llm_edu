@@ -8,6 +8,7 @@ import { buildStepDistribution } from "./generation_probabilities.js";
 import { evaluateObjectives, getObjectives } from "./objectives.js";
 import { detectFailures } from "./failures.js";
 import { scoreRun } from "./scoring.js";
+import { applyUnlocks, defaultUnlocks } from "./unlocks.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -51,6 +52,10 @@ window.addEventListener("DOMContentLoaded", () => {
   const diagnosticsEvaluateEl = document.getElementById("diagnostics-evaluate");
   const scoresListEl = document.getElementById("scores-list");
   const scoresEvaluateEl = document.getElementById("scores-evaluate");
+  const unlockToastEl = document.getElementById("unlock-toast");
+  const lockContextBadgeEl = document.getElementById("lock-context-size");
+  const lockTempBadgeEl = document.getElementById("lock-sampling-temp");
+  const lockRandomBadgeEl = document.getElementById("lock-sampling-random");
 
   if (
     !inputEl ||
@@ -93,7 +98,11 @@ window.addEventListener("DOMContentLoaded", () => {
     !diagnosticsListEl ||
     !diagnosticsEvaluateEl ||
     !scoresListEl ||
-    !scoresEvaluateEl
+    !scoresEvaluateEl ||
+    !unlockToastEl ||
+    !lockContextBadgeEl ||
+    !lockTempBadgeEl ||
+    !lockRandomBadgeEl
   ) {
     throw new Error("Tokenizer UI: required elements not found.");
   }
@@ -126,7 +135,16 @@ window.addEventListener("DOMContentLoaded", () => {
     objectives: [],
     diagnostics: [],
     scores: [],
+    unlockState: { ...defaultUnlocks },
   };
+
+  const unlockRules = {
+    "context-safe": "context-size",
+    "stable-sampling": "sampling-random",
+    "focused-attention": "sampling-temp",
+  };
+
+  let unlockToastTimer = null;
 
   function renderEmbedding() {
     embeddingBarsEl.innerHTML = "";
@@ -503,6 +521,56 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function showUnlockToast(message) {
+    if (unlockToastTimer) {
+      clearTimeout(unlockToastTimer);
+    }
+    unlockToastEl.textContent = message;
+    unlockToastEl.hidden = false;
+    unlockToastTimer = setTimeout(() => {
+      unlockToastEl.hidden = true;
+    }, 2200);
+  }
+
+  function applyLockState() {
+    const inputs = {
+      "context-size": contextSizeEl,
+      "sampling-temp": samplingTempEl,
+      "sampling-random": samplingRandomEl,
+    };
+    const badges = {
+      "context-size": lockContextBadgeEl,
+      "sampling-temp": lockTempBadgeEl,
+      "sampling-random": lockRandomBadgeEl,
+    };
+
+    Object.keys(inputs).forEach((key) => {
+      const unlocked = state.unlockState[key];
+      inputs[key].disabled = !unlocked;
+      inputs[key].classList.toggle("locked-input", !unlocked);
+      badges[key].style.display = unlocked ? "none" : "inline-block";
+    });
+  }
+
+  function persistUnlocks() {
+    localStorage.setItem("llm-edu:unlocks", JSON.stringify(state.unlockState));
+  }
+
+  function applyUnlockResults(results) {
+    const { state: nextState, unlocked } = applyUnlocks(
+      state.unlockState,
+      results,
+      unlockRules
+    );
+    state.unlockState = nextState;
+    if (unlocked.length > 0) {
+      persistUnlocks();
+      unlocked.forEach((key) => {
+        showUnlockToast(`Unlocked: ${key.replace(/-/g, " ")}`);
+      });
+    }
+    applyLockState();
+  }
   function stopReplay() {
     if (state.replayTimer) {
       clearInterval(state.replayTimer);
@@ -688,6 +756,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderObjectives();
     renderDiagnostics();
     renderScores();
+    applyUnlockResults(state.objectives);
   }
 
   function replayRun() {
@@ -797,6 +866,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const snapshot = buildRunSnapshot();
     state.objectives = evaluateObjectives(snapshot);
     renderObjectives();
+    applyUnlockResults(state.objectives);
   });
 
   diagnosticsEvaluateEl.addEventListener("click", () => {
@@ -876,6 +946,15 @@ window.addEventListener("DOMContentLoaded", () => {
   }));
   state.diagnostics = [];
   state.scores = [];
+  const storedUnlocks = localStorage.getItem("llm-edu:unlocks");
+  if (storedUnlocks) {
+    try {
+      state.unlockState = { ...defaultUnlocks, ...JSON.parse(storedUnlocks) };
+    } catch (err) {
+      state.unlockState = { ...defaultUnlocks };
+    }
+  }
+  applyLockState();
   update();
 
   if (state.selectedStageId) {
