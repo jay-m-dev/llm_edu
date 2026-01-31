@@ -690,3 +690,8 @@ textarea {
   background: #f3f1f7;
   border: 1px solid #e1dcec;
 }
+
+.generation-prob-row.selected {
+  border-color: #6a5acd;
+  box-shadow: 0 0 0 1px rgba(106, 90, 205, 0.4);
+}

@@ -371,9 +371,18 @@ window.addEventListener("DOMContentLoaded", () => {
     } else {
       const lastDistribution =
         state.generationDistributions[state.generationDistributions.length - 1];
-      lastDistribution.forEach((value, index) => {
+      const chosenIndex = state.generatedTokens.length - 1;
+      const ranked = lastDistribution
+        .map((value, index) => ({ value, index }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5);
+
+      ranked.forEach(({ value, index }) => {
         const row = document.createElement("div");
         row.className = "generation-prob-row";
+        if (index === chosenIndex) {
+          row.classList.add("selected");
+        }
 
         const label = document.createElement("div");
         label.textContent = state.tokens[index]?.value ?? "-";
