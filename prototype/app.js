@@ -7,6 +7,7 @@ import { buildDistribution, sampleFromDistribution } from "./sampling.js";
 import { buildStepDistribution } from "./generation_probabilities.js";
 import { evaluateObjectives, getObjectives } from "./objectives.js";
 import { detectFailures } from "./failures.js";
+import { scoreRun } from "./scoring.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -48,6 +49,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const objectivesEvaluateEl = document.getElementById("objectives-evaluate");
   const diagnosticsListEl = document.getElementById("diagnostics-list");
   const diagnosticsEvaluateEl = document.getElementById("diagnostics-evaluate");
+  const scoresListEl = document.getElementById("scores-list");
+  const scoresEvaluateEl = document.getElementById("scores-evaluate");
 
   if (
     !inputEl ||
@@ -88,7 +91,9 @@ window.addEventListener("DOMContentLoaded", () => {
     !objectivesListEl ||
     !objectivesEvaluateEl ||
     !diagnosticsListEl ||
-    !diagnosticsEvaluateEl
+    !diagnosticsEvaluateEl ||
+    !scoresListEl ||
+    !scoresEvaluateEl
   ) {
     throw new Error("Tokenizer UI: required elements not found.");
   }
@@ -120,6 +125,7 @@ window.addEventListener("DOMContentLoaded", () => {
     replaySpeed: 1,
     objectives: [],
     diagnostics: [],
+    scores: [],
   };
 
   function renderEmbedding() {
@@ -444,7 +450,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
       const title = document.createElement("div");
       title.className = "diagnostic-title";
-      title.textContent = failure.id.replace(/-/g, \" \").toUpperCase();
+      title.textContent = failure.id.replace(/-/g, " ").toUpperCase();
 
       const cause = document.createElement("div");
       cause.className = "diagnostic-line";
@@ -460,6 +466,40 @@ window.addEventListener("DOMContentLoaded", () => {
 
       row.append(title, cause, hint, takeaway);
       diagnosticsListEl.appendChild(row);
+    });
+  }
+
+  function renderScores() {
+    scoresListEl.innerHTML = "";
+    if (state.scores.length === 0) {
+      const row = document.createElement("div");
+      row.className = "score-row";
+      row.textContent = "No scores yet.";
+      scoresListEl.appendChild(row);
+      return;
+    }
+
+    state.scores.forEach((score) => {
+      const row = document.createElement("div");
+      row.className = "score-row";
+
+      const label = document.createElement("div");
+      label.textContent = score.label;
+
+      const barWrap = document.createElement("div");
+      barWrap.className = "score-bar-wrap";
+
+      const bar = document.createElement("div");
+      bar.className = "score-bar";
+      bar.style.width = `${Math.round(score.value * 100)}%`;
+
+      const valueEl = document.createElement("div");
+      valueEl.className = "score-value";
+      valueEl.textContent = score.value.toFixed(2);
+
+      barWrap.appendChild(bar);
+      row.append(label, barWrap, valueEl);
+      scoresListEl.appendChild(row);
     });
   }
 
@@ -574,6 +614,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderReplay();
     renderObjectives();
     renderDiagnostics();
+    renderScores();
   }
 
   function buildRunSnapshot() {
@@ -643,8 +684,10 @@ window.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("llm-edu:lastRun", JSON.stringify(snapshot));
     state.objectives = evaluateObjectives(snapshot);
     state.diagnostics = detectFailures(snapshot);
+    state.scores = scoreRun(snapshot);
     renderObjectives();
     renderDiagnostics();
+    renderScores();
   }
 
   function replayRun() {
@@ -762,6 +805,12 @@ window.addEventListener("DOMContentLoaded", () => {
     renderDiagnostics();
   });
 
+  scoresEvaluateEl.addEventListener("click", () => {
+    const snapshot = buildRunSnapshot();
+    state.scores = scoreRun(snapshot);
+    renderScores();
+  });
+
   replayPlayEl.addEventListener("click", () => {
     if (!state.replaySnapshot || state.replayTimer) {
       return;
@@ -826,6 +875,7 @@ window.addEventListener("DOMContentLoaded", () => {
     passed: false,
   }));
   state.diagnostics = [];
+  state.scores = [];
   update();
 
   if (state.selectedStageId) {

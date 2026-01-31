@@ -576,6 +576,42 @@ textarea {
   color: #6b4b4b;
 }
 
+.scores-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.score-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 50px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e1dcec;
+  background: #f3f1f7;
+  font-size: 12px;
+}
+
+.score-bar-wrap {
+  height: 8px;
+  background: #e6e1f2;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.score-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #6a5acd, #a78bfa);
+}
+
+.score-value {
+  text-align: right;
+  font-family: "Courier New", monospace;
+  color: var(--muted);
+}
+
 .generation-probabilities {
   border-top: 1px dashed var(--border);
   margin-top: 12px;
