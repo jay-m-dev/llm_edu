@@ -1,0 +1,135 @@
+:root {
+  --bg: #f7f5ef;
+  --panel: #ffffff;
+  --ink: #1f1f1f;
+  --muted: #6b6b6b;
+  --accent: #1b7f6e;
+  --border: #e1ddd2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #f7f5ef 0%, #f0ece0 100%);
+  color: var(--ink);
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+}
+
+header {
+  margin-bottom: 20px;
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  letter-spacing: 0.2px;
+}
+
+p.lede {
+  margin: 0;
+  color: var(--muted);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(31, 31, 31, 0.08);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 840px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 8px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 200px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  padding: 12px;
+  font-size: 15px;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.token-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.token-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 340px;
+  overflow: auto;
+}
+
+.token-row {
+  display: grid;
+  grid-template-columns: 48px 80px 1fr 120px;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f4f7f5;
+  border: 1px solid #e3e8e6;
+  font-size: 14px;
+}
+
+.token-row:nth-child(odd) {
+  background: #eef5f2;
+}
+
+.token-index {
+  color: var(--muted);
+}
+
+.token-type {
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+}
+
+.token-value {
+  font-weight: 600;
+}
+
+.token-range {
+  font-family: "Courier New", monospace;
+  color: var(--muted);
+  text-align: right;
+}
+
+.token-error {
+  color: #a22b2b;
+  background: #fbecec;
+  border-color: #f2c9c9;
+}

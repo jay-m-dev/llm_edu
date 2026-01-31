@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tokenizer Prototype</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Tokenizer Prototype</h1>
+        <p class="lede">A minimal, deterministic tokenizer with a visual token list.</p>
+      </header>
+
+      <div class="grid">
+        <section class="panel">
+          <label for="input">Input Text</label>
+          <textarea id="input" spellcheck="false"></textarea>
+        </section>
+
+        <section class="panel">
+          <div class="token-header">
+            <span>Tokens</span>
+            <span>Count: <span id="token-count">0</span></span>
+          </div>
+          <div id="token-list" class="token-list"></div>
+        </section>
+      </div>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "llm-edu",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node prototype/tokenizer.test.js"
+  }
+}
