@@ -6,6 +6,7 @@ import { applyContextWindow } from "./context_window.js";
 import { buildDistribution, sampleFromDistribution } from "./sampling.js";
 import { buildStepDistribution } from "./generation_probabilities.js";
 import { evaluateObjectives, getObjectives } from "./objectives.js";
+import { detectFailures } from "./failures.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -45,6 +46,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const replayOutputEl = document.getElementById("replay-output");
   const objectivesListEl = document.getElementById("objectives-list");
   const objectivesEvaluateEl = document.getElementById("objectives-evaluate");
+  const diagnosticsListEl = document.getElementById("diagnostics-list");
+  const diagnosticsEvaluateEl = document.getElementById("diagnostics-evaluate");
 
   if (
     !inputEl ||
@@ -83,7 +86,9 @@ window.addEventListener("DOMContentLoaded", () => {
     !replayExitEl ||
     !replayOutputEl ||
     !objectivesListEl ||
-    !objectivesEvaluateEl
+    !objectivesEvaluateEl ||
+    !diagnosticsListEl ||
+    !diagnosticsEvaluateEl
   ) {
     throw new Error("Tokenizer UI: required elements not found.");
   }
@@ -114,6 +119,7 @@ window.addEventListener("DOMContentLoaded", () => {
     replayTimer: null,
     replaySpeed: 1,
     objectives: [],
+    diagnostics: [],
   };
 
   function renderEmbedding() {
@@ -422,6 +428,41 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function renderDiagnostics() {
+    diagnosticsListEl.innerHTML = "";
+    if (state.diagnostics.length === 0) {
+      const row = document.createElement("div");
+      row.className = "diagnostic-row";
+      row.textContent = "No failures detected.";
+      diagnosticsListEl.appendChild(row);
+      return;
+    }
+
+    state.diagnostics.forEach((failure) => {
+      const row = document.createElement("div");
+      row.className = "diagnostic-row";
+
+      const title = document.createElement("div");
+      title.className = "diagnostic-title";
+      title.textContent = failure.id.replace(/-/g, \" \").toUpperCase();
+
+      const cause = document.createElement("div");
+      cause.className = "diagnostic-line";
+      cause.innerHTML = `<span>Cause:</span> ${failure.cause}`;
+
+      const hint = document.createElement("div");
+      hint.className = "diagnostic-line";
+      hint.innerHTML = `<span>Hint:</span> ${failure.hint}`;
+
+      const takeaway = document.createElement("div");
+      takeaway.className = "diagnostic-line";
+      takeaway.innerHTML = `<span>Takeaway:</span> ${failure.takeaway}`;
+
+      row.append(title, cause, hint, takeaway);
+      diagnosticsListEl.appendChild(row);
+    });
+  }
+
   function stopReplay() {
     if (state.replayTimer) {
       clearInterval(state.replayTimer);
@@ -532,6 +573,7 @@ window.addEventListener("DOMContentLoaded", () => {
     resetGeneration();
     renderReplay();
     renderObjectives();
+    renderDiagnostics();
   }
 
   function buildRunSnapshot() {
@@ -600,7 +642,9 @@ window.addEventListener("DOMContentLoaded", () => {
     const snapshot = buildRunSnapshot();
     localStorage.setItem("llm-edu:lastRun", JSON.stringify(snapshot));
     state.objectives = evaluateObjectives(snapshot);
+    state.diagnostics = detectFailures(snapshot);
     renderObjectives();
+    renderDiagnostics();
   }
 
   function replayRun() {
@@ -712,6 +756,12 @@ window.addEventListener("DOMContentLoaded", () => {
     renderObjectives();
   });
 
+  diagnosticsEvaluateEl.addEventListener("click", () => {
+    const snapshot = buildRunSnapshot();
+    state.diagnostics = detectFailures(snapshot);
+    renderDiagnostics();
+  });
+
   replayPlayEl.addEventListener("click", () => {
     if (!state.replaySnapshot || state.replayTimer) {
       return;
@@ -775,6 +825,7 @@ window.addEventListener("DOMContentLoaded", () => {
     description: objective.description,
     passed: false,
   }));
+  state.diagnostics = [];
   update();
 
   if (state.selectedStageId) {

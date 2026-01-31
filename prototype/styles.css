@@ -547,6 +547,35 @@ textarea {
   color: #a23b3b;
 }
 
+.diagnostics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.diagnostic-row {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ecd7d7;
+  background: #f9eeee;
+  font-size: 12px;
+}
+
+.diagnostic-title {
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #8a3a3a;
+}
+
+.diagnostic-line {
+  margin-bottom: 4px;
+}
+
+.diagnostic-line span {
+  font-weight: 600;
+  color: #6b4b4b;
+}
+
 .generation-probabilities {
   border-top: 1px dashed var(--border);
   margin-top: 12px;
