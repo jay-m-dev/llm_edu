@@ -357,9 +357,24 @@ textarea {
   padding-top: 12px;
 }
 
+.sampling-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
 .sampling-title {
   font-weight: 600;
-  margin-bottom: 10px;
+}
+
+.replay-indicator {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .sampling-controls {
@@ -393,6 +408,12 @@ textarea {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.sampling-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .sampling-result {

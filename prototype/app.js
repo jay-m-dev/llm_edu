@@ -23,6 +23,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const samplingRunEl = document.getElementById("sampling-run");
   const samplingListEl = document.getElementById("sampling-list");
   const samplingResultEl = document.getElementById("sampling-result");
+  const runSaveEl = document.getElementById("run-save");
+  const runReplayEl = document.getElementById("run-replay");
+  const replayIndicatorEl = document.getElementById("replay-indicator");
 
   if (
     !inputEl ||
@@ -41,7 +44,10 @@ window.addEventListener("DOMContentLoaded", () => {
     !samplingRandomEl ||
     !samplingRunEl ||
     !samplingListEl ||
-    !samplingResultEl
+    !samplingResultEl ||
+    !runSaveEl ||
+    !runReplayEl ||
+    !replayIndicatorEl
   ) {
     throw new Error("Tokenizer UI: required elements not found.");
   }
@@ -61,6 +67,7 @@ window.addEventListener("DOMContentLoaded", () => {
     samplingSelectedIndex: null,
     selectedStageId: null,
     selectedIndex: null,
+    replayMode: false,
   };
 
   function renderEmbedding() {
@@ -229,6 +236,7 @@ window.addEventListener("DOMContentLoaded", () => {
       state.samplingSelectedIndex === null
         ? "No sample yet."
         : `Selected: ${state.tokens[state.samplingSelectedIndex].value}`;
+    replayIndicatorEl.textContent = state.replayMode ? "Replay: on" : "Replay: off";
 
     state.tokens.forEach((token, index) => {
       const row = document.createElement("div");
@@ -312,6 +320,82 @@ window.addEventListener("DOMContentLoaded", () => {
     renderSampling();
   }
 
+  function buildRunSnapshot() {
+    return {
+      input: inputEl.value,
+      contextSize: state.contextSize,
+      samplingSeed: state.samplingSeed,
+      samplingTemp: state.samplingTemp,
+      samplingRandom: state.samplingRandom,
+      selectedIndex: state.selectedIndex,
+      selectedStageId: state.selectedStageId,
+      tokens: state.tokens,
+      embeddings: state.embeddings,
+      attentionWeights: state.attentionWeights,
+      pipelineOutputs: state.pipelineOutputs,
+      contextActive: state.contextActive,
+      contextDropped: state.contextDropped,
+      samplingDistribution: state.samplingDistribution,
+      samplingSelectedIndex: state.samplingSelectedIndex,
+    };
+  }
+
+  function applyRunSnapshot(snapshot) {
+    inputEl.value = snapshot.input;
+    contextSizeEl.value = String(snapshot.contextSize);
+    samplingSeedEl.value = String(snapshot.samplingSeed);
+    samplingTempEl.value = String(snapshot.samplingTemp);
+    samplingRandomEl.value = String(snapshot.samplingRandom);
+
+    state.contextSize = snapshot.contextSize;
+    state.samplingSeed = snapshot.samplingSeed;
+    state.samplingTemp = snapshot.samplingTemp;
+    state.samplingRandom = snapshot.samplingRandom;
+    state.selectedIndex = snapshot.selectedIndex;
+    state.selectedStageId = snapshot.selectedStageId;
+    state.tokens = snapshot.tokens;
+    state.embeddings = snapshot.embeddings;
+    state.attentionWeights = snapshot.attentionWeights;
+    state.pipelineOutputs = snapshot.pipelineOutputs;
+    state.contextActive = snapshot.contextActive;
+    state.contextDropped = snapshot.contextDropped;
+    state.samplingDistribution = snapshot.samplingDistribution;
+    state.samplingSelectedIndex = snapshot.samplingSelectedIndex;
+
+    if (state.selectedStageId) {
+      pipelineStageEl.value = state.selectedStageId;
+    }
+
+    renderTokens(state.tokens);
+    renderEmbedding();
+    renderAttention();
+    renderPipeline();
+    renderContextWindow();
+    renderSampling();
+  }
+
+  function saveRun() {
+    const snapshot = buildRunSnapshot();
+    localStorage.setItem("llm-edu:lastRun", JSON.stringify(snapshot));
+  }
+
+  function replayRun() {
+    const raw = localStorage.getItem("llm-edu:lastRun");
+    if (!raw) {
+      samplingResultEl.textContent = "No recorded run found.";
+      return;
+    }
+    let snapshot;
+    try {
+      snapshot = JSON.parse(raw);
+    } catch (err) {
+      samplingResultEl.textContent = "Recorded run is invalid.";
+      return;
+    }
+    state.replayMode = true;
+    applyRunSnapshot(snapshot);
+  }
+
   tokenListEl.addEventListener("click", (event) => {
     const target = event.target.closest(".token-row");
     if (!target) {
@@ -383,6 +467,16 @@ window.addEventListener("DOMContentLoaded", () => {
     state.samplingDistribution = result.distribution;
     state.samplingSelectedIndex = result.selectedIndex;
     renderSampling();
+  });
+
+  runSaveEl.addEventListener("click", () => {
+    state.replayMode = false;
+    saveRun();
+    renderSampling();
+  });
+
+  runReplayEl.addEventListener("click", () => {
+    replayRun();
   });
 
   inputEl.value = "Hello, world!\nTokenize this: A_B test.";
