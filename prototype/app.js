@@ -3,6 +3,7 @@ import { embedToken } from "./embedding.js";
 import { computeAttention } from "./attention.js";
 import { applyPipeline, getPipelineStages } from "./pipeline.js";
 import { applyContextWindow } from "./context_window.js";
+import { buildDistribution, sampleFromDistribution } from "./sampling.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -16,6 +17,12 @@ window.addEventListener("DOMContentLoaded", () => {
   const contextSizeEl = document.getElementById("context-size");
   const contextActiveEl = document.getElementById("context-active");
   const contextDroppedEl = document.getElementById("context-dropped");
+  const samplingSeedEl = document.getElementById("sampling-seed");
+  const samplingTempEl = document.getElementById("sampling-temp");
+  const samplingRandomEl = document.getElementById("sampling-random");
+  const samplingRunEl = document.getElementById("sampling-run");
+  const samplingListEl = document.getElementById("sampling-list");
+  const samplingResultEl = document.getElementById("sampling-result");
 
   if (
     !inputEl ||
@@ -28,7 +35,13 @@ window.addEventListener("DOMContentLoaded", () => {
     !pipelineListEl ||
     !contextSizeEl ||
     !contextActiveEl ||
-    !contextDroppedEl
+    !contextDroppedEl ||
+    !samplingSeedEl ||
+    !samplingTempEl ||
+    !samplingRandomEl ||
+    !samplingRunEl ||
+    !samplingListEl ||
+    !samplingResultEl
   ) {
     throw new Error("Tokenizer UI: required elements not found.");
   }
@@ -41,6 +54,11 @@ window.addEventListener("DOMContentLoaded", () => {
     contextActive: [],
     contextDropped: [],
     contextSize: 12,
+    samplingSeed: 12345,
+    samplingTemp: 1,
+    samplingRandom: 0.2,
+    samplingDistribution: [],
+    samplingSelectedIndex: null,
     selectedStageId: null,
     selectedIndex: null,
   };
@@ -199,6 +217,54 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function renderSampling() {
+    samplingListEl.innerHTML = "";
+
+    if (state.tokens.length === 0) {
+      samplingResultEl.textContent = "No tokens to sample.";
+      return;
+    }
+
+    samplingResultEl.textContent =
+      state.samplingSelectedIndex === null
+        ? "No sample yet."
+        : `Selected: ${state.tokens[state.samplingSelectedIndex].value}`;
+
+    state.tokens.forEach((token, index) => {
+      const row = document.createElement("div");
+      row.className = "sampling-row";
+      if (index === state.samplingSelectedIndex) {
+        row.classList.add("selected");
+      }
+
+      const label = document.createElement("div");
+      label.textContent = token.value;
+
+      const barWrap = document.createElement("div");
+      barWrap.className = "sampling-bar-wrap";
+
+      const bar = document.createElement("div");
+      bar.className = "sampling-bar";
+      bar.style.width = `${Math.round(state.samplingDistribution[index] * 100)}%`;
+
+      const valueEl = document.createElement("div");
+      valueEl.className = "sampling-value";
+      valueEl.textContent = state.samplingDistribution[index].toFixed(2);
+
+      barWrap.appendChild(bar);
+      row.append(label, barWrap, valueEl);
+      samplingListEl.appendChild(row);
+    });
+  }
+
+  function updateSamplingDistribution() {
+    state.samplingDistribution = buildDistribution(state.tokens, {
+      seed: state.samplingSeed,
+      temperature: state.samplingTemp,
+      randomness: state.samplingRandom,
+    });
+  }
+
   function update() {
     const input = inputEl.value;
     let tokens = [];
@@ -221,10 +287,12 @@ window.addEventListener("DOMContentLoaded", () => {
     const context = applyContextWindow(tokens, state.contextSize);
     state.contextActive = context.activeTokens;
     state.contextDropped = context.droppedTokens;
+    updateSamplingDistribution();
     if (tokens.length === 0) {
       state.selectedIndex = null;
       state.attentionWeights = [];
       state.selectedStageId = null;
+      state.samplingSelectedIndex = null;
     } else if (state.selectedIndex === null || !tokens[state.selectedIndex]) {
       state.selectedIndex = 0;
       state.attentionWeights = computeAttention(tokens, 0);
@@ -241,6 +309,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderAttention();
     renderPipeline();
     renderContextWindow();
+    renderSampling();
   }
 
   tokenListEl.addEventListener("click", (event) => {
@@ -284,8 +353,43 @@ window.addEventListener("DOMContentLoaded", () => {
     update();
   });
 
+  samplingSeedEl.addEventListener("input", () => {
+    const parsed = Number.parseInt(samplingSeedEl.value, 10);
+    state.samplingSeed = Number.isNaN(parsed) ? 0 : parsed;
+    updateSamplingDistribution();
+    renderSampling();
+  });
+
+  samplingTempEl.addEventListener("input", () => {
+    const parsed = Number.parseFloat(samplingTempEl.value);
+    state.samplingTemp = Number.isNaN(parsed) ? 1 : parsed;
+    updateSamplingDistribution();
+    renderSampling();
+  });
+
+  samplingRandomEl.addEventListener("input", () => {
+    const parsed = Number.parseFloat(samplingRandomEl.value);
+    state.samplingRandom = Number.isNaN(parsed) ? 0 : parsed;
+    updateSamplingDistribution();
+    renderSampling();
+  });
+
+  samplingRunEl.addEventListener("click", () => {
+    const result = sampleFromDistribution(state.tokens, {
+      seed: state.samplingSeed,
+      temperature: state.samplingTemp,
+      randomness: state.samplingRandom,
+    });
+    state.samplingDistribution = result.distribution;
+    state.samplingSelectedIndex = result.selectedIndex;
+    renderSampling();
+  });
+
   inputEl.value = "Hello, world!\nTokenize this: A_B test.";
   contextSizeEl.value = String(state.contextSize);
+  samplingSeedEl.value = String(state.samplingSeed);
+  samplingTempEl.value = String(state.samplingTemp);
+  samplingRandomEl.value = String(state.samplingRandom);
   update();
 
   if (state.selectedStageId) {

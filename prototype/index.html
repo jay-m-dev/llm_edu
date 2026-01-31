@@ -61,6 +61,21 @@
               </div>
             </div>
           </div>
+
+          <div id="sampling-panel" class="sampling-panel">
+            <div class="sampling-title">Sampling</div>
+            <div class="sampling-controls">
+              <label class="sampling-label" for="sampling-seed">Seed</label>
+              <input id="sampling-seed" class="sampling-input" type="number" value="12345" />
+              <label class="sampling-label" for="sampling-temp">Temperature</label>
+              <input id="sampling-temp" class="sampling-input" type="number" step="0.1" min="0.1" value="1" />
+              <label class="sampling-label" for="sampling-random">Randomness</label>
+              <input id="sampling-random" class="sampling-input" type="number" step="0.05" min="0" max="1" value="0.2" />
+              <button id="sampling-run" class="sampling-button" type="button">Sample</button>
+            </div>
+            <div id="sampling-result" class="sampling-result">No sample yet.</div>
+            <div id="sampling-list" class="sampling-list"></div>
+          </div>
         </section>
       </div>
     </div>
