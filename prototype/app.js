@@ -4,6 +4,7 @@ import { computeAttention } from "./attention.js";
 import { applyPipeline, getPipelineStages } from "./pipeline.js";
 import { applyContextWindow } from "./context_window.js";
 import { buildDistribution, sampleFromDistribution } from "./sampling.js";
+import { buildStepDistribution } from "./generation_probabilities.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -32,6 +33,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const generationOutputEl = document.getElementById("generation-output");
   const generationStepCountEl = document.getElementById("generation-step");
   const generationCurrentEl = document.getElementById("generation-current");
+  const generationProbListEl = document.getElementById("generation-prob-list");
 
   if (
     !inputEl ||
@@ -59,7 +61,8 @@ window.addEventListener("DOMContentLoaded", () => {
     !generationStepEl ||
     !generationOutputEl ||
     !generationStepCountEl ||
-    !generationCurrentEl
+    !generationCurrentEl ||
+    !generationProbListEl
   ) {
     throw new Error("Tokenizer UI: required elements not found.");
   }
@@ -83,6 +86,7 @@ window.addEventListener("DOMContentLoaded", () => {
     generationIndex: 0,
     generatedTokens: [],
     generationTimer: null,
+    generationDistributions: [],
   };
 
   function renderEmbedding() {
@@ -282,6 +286,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function renderGeneration() {
     generationOutputEl.innerHTML = "";
+    generationProbListEl.innerHTML = "";
     state.generatedTokens.forEach((token) => {
       const chip = document.createElement("div");
       chip.className = "generation-token";
@@ -294,6 +299,29 @@ window.addEventListener("DOMContentLoaded", () => {
         ? state.generatedTokens[state.generatedTokens.length - 1].value
         : "-";
     generationCurrentEl.textContent = currentToken;
+
+    if (state.generationDistributions.length === 0) {
+      const row = document.createElement("div");
+      row.className = "generation-prob-row";
+      row.textContent = "No probabilities yet.";
+      generationProbListEl.appendChild(row);
+      return;
+    }
+    const lastDistribution = state.generationDistributions[state.generationDistributions.length - 1];
+    lastDistribution.forEach((value, index) => {
+      const row = document.createElement("div");
+      row.className = "generation-prob-row";
+
+      const label = document.createElement("div");
+      label.textContent = state.tokens[index]?.value ?? "-";
+
+      const valueEl = document.createElement("div");
+      valueEl.className = "sampling-value";
+      valueEl.textContent = value.toFixed(2);
+
+      row.append(label, valueEl);
+      generationProbListEl.appendChild(row);
+    });
   }
 
   function stopGeneration() {
@@ -307,6 +335,7 @@ window.addEventListener("DOMContentLoaded", () => {
     stopGeneration();
     state.generationIndex = 0;
     state.generatedTokens = [];
+    state.generationDistributions = [];
     renderGeneration();
   }
 
@@ -316,7 +345,13 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
     const token = state.tokens[state.generationIndex];
+    const distribution = buildStepDistribution(state.tokens, state.generationIndex, {
+      seed: state.samplingSeed,
+      temperature: state.samplingTemp,
+      randomness: state.samplingRandom,
+    });
     state.generatedTokens.push(token);
+    state.generationDistributions.push(distribution);
     state.generationIndex += 1;
     renderGeneration();
   }

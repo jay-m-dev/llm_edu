@@ -517,3 +517,36 @@ textarea {
   padding: 4px 8px;
   font-weight: 600;
 }
+
+.generation-probabilities {
+  border-top: 1px dashed var(--border);
+  margin-top: 12px;
+  padding-top: 10px;
+}
+
+.generation-prob-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.generation-prob-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.generation-prob-row {
+  display: grid;
+  grid-template-columns: 1fr 60px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #f3f1f7;
+  border: 1px solid #e1dcec;
+}
