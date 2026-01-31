@@ -1,6 +1,6 @@
 # Tokenizer Prototype
 
-A minimal, standalone tokenizer prototype for the LLM simulator with pseudo-embeddings, attention weights, a transformation pipeline, context window mechanics, sampling controls, deterministic replay, token-by-token generation, per-token probability tracking, step attention tracking, and replay controls.
+A minimal, standalone tokenizer prototype for the LLM simulator with pseudo-embeddings, attention weights, a transformation pipeline, context window mechanics, sampling controls, deterministic replay, token-by-token generation, per-token probability tracking, step attention tracking, replay controls, and a basic objective system.
 
 ## Run
 Open `prototype/index.html` in a browser.

@@ -5,6 +5,7 @@ import { applyPipeline, getPipelineStages } from "./pipeline.js";
 import { applyContextWindow } from "./context_window.js";
 import { buildDistribution, sampleFromDistribution } from "./sampling.js";
 import { buildStepDistribution } from "./generation_probabilities.js";
+import { evaluateObjectives, getObjectives } from "./objectives.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -42,6 +43,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const replaySpeedEl = document.getElementById("replay-speed");
   const replayExitEl = document.getElementById("replay-exit");
   const replayOutputEl = document.getElementById("replay-output");
+  const objectivesListEl = document.getElementById("objectives-list");
+  const objectivesEvaluateEl = document.getElementById("objectives-evaluate");
 
   if (
     !inputEl ||
@@ -78,7 +81,9 @@ window.addEventListener("DOMContentLoaded", () => {
     !replayStepEl ||
     !replaySpeedEl ||
     !replayExitEl ||
-    !replayOutputEl
+    !replayOutputEl ||
+    !objectivesListEl ||
+    !objectivesEvaluateEl
   ) {
     throw new Error("Tokenizer UI: required elements not found.");
   }
@@ -108,6 +113,7 @@ window.addEventListener("DOMContentLoaded", () => {
     replayIndex: 0,
     replayTimer: null,
     replaySpeed: 1,
+    objectives: [],
   };
 
   function renderEmbedding() {
@@ -387,6 +393,35 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function renderObjectives() {
+    objectivesListEl.innerHTML = "";
+    if (state.objectives.length === 0) {
+      const row = document.createElement("div");
+      row.className = "objective-row";
+      row.textContent = "No evaluation yet.";
+      objectivesListEl.appendChild(row);
+      return;
+    }
+
+    state.objectives.forEach((objective) => {
+      const row = document.createElement("div");
+      row.className = "objective-row";
+
+      const status = document.createElement("div");
+      status.className = "objective-status";
+      status.textContent = objective.passed ? "Pass" : "Fail";
+      if (!objective.passed) {
+        status.classList.add("fail");
+      }
+
+      const desc = document.createElement("div");
+      desc.textContent = objective.description;
+
+      row.append(status, desc);
+      objectivesListEl.appendChild(row);
+    });
+  }
+
   function stopReplay() {
     if (state.replayTimer) {
       clearInterval(state.replayTimer);
@@ -496,6 +531,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderSampling();
     resetGeneration();
     renderReplay();
+    renderObjectives();
   }
 
   function buildRunSnapshot() {
@@ -563,6 +599,8 @@ window.addEventListener("DOMContentLoaded", () => {
   function saveRun() {
     const snapshot = buildRunSnapshot();
     localStorage.setItem("llm-edu:lastRun", JSON.stringify(snapshot));
+    state.objectives = evaluateObjectives(snapshot);
+    renderObjectives();
   }
 
   function replayRun() {
@@ -668,6 +706,12 @@ window.addEventListener("DOMContentLoaded", () => {
     replayRun();
   });
 
+  objectivesEvaluateEl.addEventListener("click", () => {
+    const snapshot = buildRunSnapshot();
+    state.objectives = evaluateObjectives(snapshot);
+    renderObjectives();
+  });
+
   replayPlayEl.addEventListener("click", () => {
     if (!state.replaySnapshot || state.replayTimer) {
       return;
@@ -726,6 +770,11 @@ window.addEventListener("DOMContentLoaded", () => {
   samplingTempEl.value = String(state.samplingTemp);
   samplingRandomEl.value = String(state.samplingRandom);
   replaySpeedEl.value = String(state.replaySpeed);
+  state.objectives = getObjectives().map((objective) => ({
+    id: objective.id,
+    description: objective.description,
+    passed: false,
+  }));
   update();
 
   if (state.selectedStageId) {

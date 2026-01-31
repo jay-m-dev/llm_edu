@@ -518,6 +518,35 @@ textarea {
   font-weight: 600;
 }
 
+.objectives-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.objective-row {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e3e8e6;
+  background: #f4f7f5;
+  font-size: 12px;
+}
+
+.objective-status {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #3a7a4e;
+}
+
+.objective-status.fail {
+  color: #a23b3b;
+}
+
 .generation-probabilities {
   border-top: 1px dashed var(--border);
   margin-top: 12px;
