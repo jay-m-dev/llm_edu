@@ -47,6 +47,12 @@ p.lede {
   box-shadow: 0 8px 24px rgba(31, 31, 31, 0.08);
 }
 
+.panel-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -107,6 +113,11 @@ textarea {
   background: #eef5f2;
 }
 
+.token-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(27, 127, 110, 0.4);
+}
+
 .token-index {
   color: var(--muted);
 }
@@ -132,4 +143,54 @@ textarea {
   color: #a22b2b;
   background: #fbecec;
   border-color: #f2c9c9;
+}
+
+.embedding-panel {
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+}
+
+.embedding-title {
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--ink);
+}
+
+.embedding-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.embedding-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 48px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.embedding-label {
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+}
+
+.embedding-bar-wrap {
+  height: 10px;
+  background: #e6edea;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.embedding-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #1b7f6e, #36a98f);
+}
+
+.embedding-value {
+  text-align: right;
+  font-family: "Courier New", monospace;
+  color: var(--muted);
 }

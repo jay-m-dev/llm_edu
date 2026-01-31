@@ -1,8 +1,55 @@
 import { tokenize } from "./tokenizer.js";
+import { embedToken } from "./embedding.js";
 
 const inputEl = document.getElementById("input");
 const tokenListEl = document.getElementById("token-list");
 const countEl = document.getElementById("token-count");
+const embeddingPanelEl = document.getElementById("embedding-panel");
+const embeddingTitleEl = document.getElementById("embedding-title");
+const embeddingBarsEl = document.getElementById("embedding-bars");
+
+const state = {
+  tokens: [],
+  embeddings: [],
+  selectedIndex: null,
+};
+
+function renderEmbedding() {
+  embeddingBarsEl.innerHTML = "";
+
+  if (state.selectedIndex === null || !state.tokens[state.selectedIndex]) {
+    embeddingTitleEl.textContent = "Select a token to inspect its features.";
+    return;
+  }
+
+  const token = state.tokens[state.selectedIndex];
+  const embedding = state.embeddings[state.selectedIndex];
+  embeddingTitleEl.textContent = `Token: "${token.value}"`;
+
+  embedding.values.forEach((value, index) => {
+    const row = document.createElement("div");
+    row.className = "embedding-row";
+
+    const label = document.createElement("div");
+    label.className = "embedding-label";
+    label.textContent = embedding.labels[index];
+
+    const barWrap = document.createElement("div");
+    barWrap.className = "embedding-bar-wrap";
+
+    const bar = document.createElement("div");
+    bar.className = "embedding-bar";
+    bar.style.width = `${Math.round(value * 100)}%`;
+
+    const valueEl = document.createElement("div");
+    valueEl.className = "embedding-value";
+    valueEl.textContent = value.toFixed(2);
+
+    barWrap.appendChild(bar);
+    row.append(label, barWrap, valueEl);
+    embeddingBarsEl.appendChild(row);
+  });
+}
 
 function renderTokens(tokens) {
   tokenListEl.innerHTML = "";
@@ -11,6 +58,10 @@ function renderTokens(tokens) {
   tokens.forEach((token, index) => {
     const row = document.createElement("div");
     row.className = "token-row";
+    if (index === state.selectedIndex) {
+      row.classList.add("token-selected");
+    }
+    row.dataset.index = String(index);
 
     const indexEl = document.createElement("div");
     indexEl.className = "token-index";
@@ -48,8 +99,31 @@ function update() {
     return;
   }
 
+  state.tokens = tokens;
+  state.embeddings = tokens.map((token) => embedToken(token.value));
+  if (tokens.length === 0) {
+    state.selectedIndex = null;
+  } else if (state.selectedIndex === null || !tokens[state.selectedIndex]) {
+    state.selectedIndex = 0;
+  }
+
   renderTokens(tokens);
+  renderEmbedding();
 }
+
+tokenListEl.addEventListener("click", (event) => {
+  const target = event.target.closest(".token-row");
+  if (!target) {
+    return;
+  }
+  const index = Number(target.dataset.index);
+  if (Number.isNaN(index)) {
+    return;
+  }
+  state.selectedIndex = index;
+  renderTokens(state.tokens);
+  renderEmbedding();
+});
 
 inputEl.addEventListener("input", update);
 
