@@ -194,3 +194,49 @@ textarea {
   font-family: "Courier New", monospace;
   color: var(--muted);
 }
+
+.attention-panel {
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+}
+
+.attention-title {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.attention-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attention-row {
+  display: grid;
+  grid-template-columns: 1fr 60px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.attention-token {
+  font-weight: 600;
+}
+
+.attention-bar-wrap {
+  height: 8px;
+  background: #efe7da;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.attention-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #d49a3a, #f2c56a);
+}
+
+.attention-value {
+  text-align: right;
+  font-family: "Courier New", monospace;
+  color: var(--muted);
+}

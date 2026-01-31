@@ -1,6 +1,6 @@
 # Tokenizer Prototype
 
-A minimal, standalone tokenizer prototype for the LLM simulator with a simple pseudo-embedding view.
+A minimal, standalone tokenizer prototype for the LLM simulator with pseudo-embeddings and attention weights.
 
 ## Run
 Open `prototype/index.html` in a browser.

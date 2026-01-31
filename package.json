@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node prototype/tokenizer.test.js && node prototype/embedding.test.js"
+    "test": "node prototype/tokenizer.test.js && node prototype/embedding.test.js && node prototype/attention.test.js"
   }
 }
