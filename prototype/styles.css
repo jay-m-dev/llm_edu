@@ -90,6 +90,27 @@ textarea {
   font-weight: 600;
 }
 
+.context-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.context-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.context-input {
+  width: 70px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 6px;
+  font-size: 13px;
+}
+
 .token-list {
   display: flex;
   flex-direction: column;
@@ -281,4 +302,52 @@ textarea {
   background: #f6f3ed;
   border: 1px solid #efe7da;
   font-size: 13px;
+}
+
+.context-panel {
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+}
+
+.context-title {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.context-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.context-subtitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.context-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.context-chip {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f4f7f5;
+  border: 1px solid #e3e8e6;
+  font-size: 12px;
+}
+
+.context-dropped .context-chip {
+  background: #f2e3e3;
+  border-color: #efd0d0;
+  color: #8a3a3a;
 }

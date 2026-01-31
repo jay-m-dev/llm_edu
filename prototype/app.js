@@ -2,6 +2,7 @@ import { tokenize } from "./tokenizer.js";
 import { embedToken } from "./embedding.js";
 import { computeAttention } from "./attention.js";
 import { applyPipeline, getPipelineStages } from "./pipeline.js";
+import { applyContextWindow } from "./context_window.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -12,6 +13,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const attentionListEl = document.getElementById("attention-list");
   const pipelineStageEl = document.getElementById("pipeline-stage");
   const pipelineListEl = document.getElementById("pipeline-list");
+  const contextSizeEl = document.getElementById("context-size");
+  const contextActiveEl = document.getElementById("context-active");
+  const contextDroppedEl = document.getElementById("context-dropped");
 
   if (
     !inputEl ||
@@ -21,7 +25,10 @@ window.addEventListener("DOMContentLoaded", () => {
     !embeddingBarsEl ||
     !attentionListEl ||
     !pipelineStageEl ||
-    !pipelineListEl
+    !pipelineListEl ||
+    !contextSizeEl ||
+    !contextActiveEl ||
+    !contextDroppedEl
   ) {
     throw new Error("Tokenizer UI: required elements not found.");
   }
@@ -31,6 +38,9 @@ window.addEventListener("DOMContentLoaded", () => {
     embeddings: [],
     attentionWeights: [],
     pipelineOutputs: [],
+    contextActive: [],
+    contextDropped: [],
+    contextSize: 12,
     selectedStageId: null,
     selectedIndex: null,
   };
@@ -170,6 +180,25 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function renderContextWindow() {
+    contextActiveEl.innerHTML = "";
+    contextDroppedEl.innerHTML = "";
+
+    state.contextActive.forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "context-chip";
+      row.textContent = `${item.index}: ${item.token.value}`;
+      contextActiveEl.appendChild(row);
+    });
+
+    state.contextDropped.forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "context-chip";
+      row.textContent = `${item.index}: ${item.token.value}`;
+      contextDroppedEl.appendChild(row);
+    });
+  }
+
   function update() {
     const input = inputEl.value;
     let tokens = [];
@@ -189,6 +218,9 @@ window.addEventListener("DOMContentLoaded", () => {
     state.embeddings = tokens.map((token) => embedToken(token.value));
     const pipeline = applyPipeline(tokens);
     state.pipelineOutputs = pipeline.outputs;
+    const context = applyContextWindow(tokens, state.contextSize);
+    state.contextActive = context.activeTokens;
+    state.contextDropped = context.droppedTokens;
     if (tokens.length === 0) {
       state.selectedIndex = null;
       state.attentionWeights = [];
@@ -208,6 +240,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderEmbedding();
     renderAttention();
     renderPipeline();
+    renderContextWindow();
   }
 
   tokenListEl.addEventListener("click", (event) => {
@@ -245,7 +278,14 @@ window.addEventListener("DOMContentLoaded", () => {
     renderPipeline();
   });
 
+  contextSizeEl.addEventListener("input", () => {
+    const parsed = Number.parseInt(contextSizeEl.value, 10);
+    state.contextSize = Number.isNaN(parsed) ? 0 : Math.max(parsed, 0);
+    update();
+  });
+
   inputEl.value = "Hello, world!\nTokenize this: A_B test.";
+  contextSizeEl.value = String(state.contextSize);
   update();
 
   if (state.selectedStageId) {

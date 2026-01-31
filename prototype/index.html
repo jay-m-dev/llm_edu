@@ -24,6 +24,10 @@
             <span>Tokens</span>
             <span>Count: <span id="token-count">0</span></span>
           </div>
+          <div class="context-controls">
+            <label class="context-label" for="context-size">Context size</label>
+            <input id="context-size" class="context-input" type="number" min="0" max="200" value="12" />
+          </div>
           <div id="token-list" class="token-list"></div>
 
           <div id="embedding-panel" class="embedding-panel">
@@ -42,6 +46,20 @@
               <select id="pipeline-stage" class="pipeline-select"></select>
             </div>
             <div id="pipeline-list" class="pipeline-list"></div>
+          </div>
+
+          <div id="context-panel" class="context-panel">
+            <div class="context-title">Context Window</div>
+            <div class="context-grid">
+              <div>
+                <div class="context-subtitle">Active</div>
+                <div id="context-active" class="context-list"></div>
+              </div>
+              <div>
+                <div class="context-subtitle">Dropped</div>
+                <div id="context-dropped" class="context-list context-dropped"></div>
+              </div>
+            </div>
           </div>
         </section>
       </div>
