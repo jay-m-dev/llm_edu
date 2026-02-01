@@ -73,6 +73,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const savesMessageEl = document.getElementById("saves-message");
   const scenarioSelectEl = document.getElementById("scenario-select");
   const scenarioResetEl = document.getElementById("scenario-reset");
+  const scenarioToggleEl = document.getElementById("scenario-toggle");
+  const promptToggleEl = document.getElementById("prompt-toggle");
   const scenarioSummaryEl = document.getElementById("scenario-summary");
   const scenarioIntroEl = document.getElementById("scenario-intro");
   const scenarioObjectiveEl = document.getElementById("scenario-objective");
@@ -150,6 +152,8 @@ window.addEventListener("DOMContentLoaded", () => {
     !savesMessageEl ||
     !scenarioSelectEl ||
     !scenarioResetEl ||
+    !scenarioToggleEl ||
+    !promptToggleEl ||
     !scenarioSummaryEl ||
     !scenarioIntroEl ||
     !scenarioObjectiveEl ||
@@ -208,6 +212,7 @@ window.addEventListener("DOMContentLoaded", () => {
     saves: [],
     scenarioId: scenarios[0].id,
     presets: [],
+    useAltPrompt: false,
   };
 
   const unlockRules = {
@@ -698,6 +703,8 @@ window.addEventListener("DOMContentLoaded", () => {
     scenarioSummaryEl.textContent = scenario.summary;
     scenarioIntroEl.textContent = scenario.intro;
     scenarioFailureEl.textContent = `Likely failure: ${scenario.failureHint}`;
+    scenarioToggleEl.hidden = !scenario.promptAlt;
+    promptToggleEl.textContent = state.useAltPrompt ? "Use A" : "Use B";
     const objective = state.objectives.find((item) => item.id === scenario.objectiveId);
     if (objective) {
       scenarioObjectiveEl.textContent = `Objective: ${objective.description} (${objective.passed ? "Pass" : "Fail"})`;
@@ -1245,6 +1252,7 @@ window.addEventListener("DOMContentLoaded", () => {
   scenarioSelectEl.addEventListener("change", () => {
     state.scenarioId = scenarioSelectEl.value;
     const scenario = findScenario(state.scenarioId);
+    state.useAltPrompt = false;
     inputEl.value = scenario.prompt;
     if (scenario.params) {
       state.contextSize = scenario.params.contextSize;
@@ -1262,6 +1270,7 @@ window.addEventListener("DOMContentLoaded", () => {
   scenarioResetEl.addEventListener("click", () => {
     state.scenarioId = scenarios[0].id;
     const scenario = findScenario(state.scenarioId);
+    state.useAltPrompt = false;
     inputEl.value = scenario.prompt;
     if (scenario.params) {
       state.contextSize = scenario.params.contextSize;
@@ -1272,6 +1281,17 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     }
     persistScenario();
+    renderScenario();
+    update();
+  });
+
+  promptToggleEl.addEventListener("click", () => {
+    const scenario = findScenario(state.scenarioId);
+    if (!scenario.promptAlt) {
+      return;
+    }
+    state.useAltPrompt = !state.useAltPrompt;
+    inputEl.value = state.useAltPrompt ? scenario.promptAlt : scenario.prompt;
     renderScenario();
     update();
   });

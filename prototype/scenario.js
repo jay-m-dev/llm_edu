@@ -40,6 +40,17 @@ export const scenarios = [
     params: { contextSize: 14, samplingTemp: 1.6, samplingRandom: 0.6, samplingSeed: 9001 },
     prompt: "List three facts about a fictional planet. Keep them consistent.",
   },
+  {
+    id: "prompt-sensitivity",
+    name: "Prompt Sensitivity",
+    summary: "Small wording changes cause output shifts.",
+    intro: "Toggle between two similar prompts and observe how output changes. Tighten the prompt to stabilize results.",
+    objectiveId: "stable-sampling",
+    failureHint: "Use more specific language to reduce drift.",
+    params: { contextSize: 12, samplingTemp: 1.1, samplingRandom: 0.25, samplingSeed: 7007 },
+    prompt: "Describe a tiny spaceship pilot in two sentences.",
+    promptAlt: "Describe a tiny spaceship pilot in two short sentences.",
+  },
 ];
 
 export function findScenario(id) {
