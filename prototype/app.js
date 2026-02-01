@@ -12,6 +12,7 @@ import { applyUnlocks, defaultUnlocks } from "./unlocks.js";
 import { detectHallucinations } from "./hallucination.js";
 import { explanations } from "./explanations.js";
 import { findScenario, scenarios } from "./scenario.js";
+import { defaultPresets, hydratePresets } from "./presets.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -73,6 +74,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const scenarioSelectEl = document.getElementById("scenario-select");
   const scenarioResetEl = document.getElementById("scenario-reset");
   const scenarioSummaryEl = document.getElementById("scenario-summary");
+  const presetsListEl = document.getElementById("presets-list");
+  const presetSaveEl = document.getElementById("preset-save");
   const unlockToastEl = document.getElementById("unlock-toast");
   const failureBannerEl = document.getElementById("failure-banner");
   const failureTitleEl = document.querySelector(".failure-title");
@@ -145,6 +148,8 @@ window.addEventListener("DOMContentLoaded", () => {
     !scenarioSelectEl ||
     !scenarioResetEl ||
     !scenarioSummaryEl ||
+    !presetsListEl ||
+    !presetSaveEl ||
     !unlockToastEl ||
     !failureBannerEl ||
     !failureTitleEl ||
@@ -196,6 +201,7 @@ window.addEventListener("DOMContentLoaded", () => {
     explainVisible: true,
     saves: [],
     scenarioId: scenarios[0].id,
+    presets: [],
   };
 
   const unlockRules = {
@@ -686,6 +692,54 @@ window.addEventListener("DOMContentLoaded", () => {
     scenarioSummaryEl.textContent = scenario.summary;
   }
 
+  function renderPresets() {
+    presetsListEl.innerHTML = "";
+    state.presets.forEach((preset) => {
+      const row = document.createElement("div");
+      row.className = "score-row";
+
+      const label = document.createElement("div");
+      label.textContent = preset.name;
+
+      const actions = document.createElement("div");
+      actions.className = "sampling-actions";
+
+      const applyBtn = document.createElement("button");
+      applyBtn.className = "generation-button";
+      applyBtn.textContent = "Apply";
+      applyBtn.addEventListener("click", () => {
+        state.contextSize = preset.params.contextSize;
+        state.samplingTemp = preset.params.samplingTemp;
+        state.samplingRandom = preset.params.samplingRandom;
+        contextSizeEl.value = String(state.contextSize);
+        contextSizeSliderEl.value = String(state.contextSize);
+        contextSizeValueEl.textContent = String(state.contextSize);
+        samplingTempEl.value = String(state.samplingTemp);
+        samplingTempSliderEl.value = String(state.samplingTemp);
+        samplingTempValueEl.textContent = state.samplingTemp.toFixed(1);
+        samplingRandomEl.value = String(state.samplingRandom);
+        samplingRandomSliderEl.value = String(state.samplingRandom);
+        samplingRandomValueEl.textContent = state.samplingRandom.toFixed(2);
+        persistParams();
+        update();
+      });
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "generation-button";
+      deleteBtn.textContent = "Delete";
+      deleteBtn.addEventListener("click", () => {
+        state.presets = state.presets.filter((item) => item.id !== preset.id);
+        localStorage.setItem("llm-edu:presets", JSON.stringify(state.presets));
+        renderPresets();
+      });
+
+      actions.append(applyBtn, deleteBtn);
+      row.append(label, actions, document.createElement("div"));
+      row.replaceChild(actions, row.children[1]);
+      presetsListEl.appendChild(row);
+    });
+  }
+
   function showUnlockToast(message) {
     if (unlockToastTimer) {
       clearTimeout(unlockToastTimer);
@@ -875,6 +929,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderExplanation();
     renderFailureBanner();
     renderSaves();
+    renderPresets();
   }
 
   function buildRunSnapshot() {
@@ -1190,6 +1245,22 @@ window.addEventListener("DOMContentLoaded", () => {
     update();
   });
 
+  presetSaveEl.addEventListener("click", () => {
+    const name = `Preset ${new Date().toLocaleTimeString()}`;
+    const entry = {
+      id: Date.now().toString(36),
+      name,
+      params: {
+        contextSize: state.contextSize,
+        samplingTemp: state.samplingTemp,
+        samplingRandom: state.samplingRandom,
+      },
+    };
+    state.presets = [entry, ...state.presets].slice(0, 10);
+    localStorage.setItem("llm-edu:presets", JSON.stringify(state.presets));
+    renderPresets();
+  });
+
   saveRunEl.addEventListener("click", () => {
     saveRunToList();
   });
@@ -1337,6 +1408,17 @@ window.addEventListener("DOMContentLoaded", () => {
   const scenario = findScenario(state.scenarioId);
   inputEl.value = scenario.prompt;
   renderScenario();
+  const storedPresets = localStorage.getItem("llm-edu:presets");
+  if (storedPresets) {
+    try {
+      state.presets = hydratePresets(JSON.parse(storedPresets));
+    } catch (err) {
+      state.presets = [...defaultPresets];
+    }
+  } else {
+    state.presets = [...defaultPresets];
+  }
+  renderPresets();
   loadSaves();
   hallucinationToggleEl.checked = state.hallucinationEnabled;
   renderExplanation();
