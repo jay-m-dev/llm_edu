@@ -66,6 +66,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const diagnosticsEvaluateEl = document.getElementById("diagnostics-evaluate");
   const scoresListEl = document.getElementById("scores-list");
   const scoresEvaluateEl = document.getElementById("scores-evaluate");
+  const savesListEl = document.getElementById("saves-list");
+  const saveRunEl = document.getElementById("save-run");
+  const savesMessageEl = document.getElementById("saves-message");
   const unlockToastEl = document.getElementById("unlock-toast");
   const failureBannerEl = document.getElementById("failure-banner");
   const failureTitleEl = document.querySelector(".failure-title");
@@ -132,6 +135,9 @@ window.addEventListener("DOMContentLoaded", () => {
     !diagnosticsEvaluateEl ||
     !scoresListEl ||
     !scoresEvaluateEl ||
+    !savesListEl ||
+    !saveRunEl ||
+    !savesMessageEl ||
     !unlockToastEl ||
     !failureBannerEl ||
     !failureTitleEl ||
@@ -181,6 +187,7 @@ window.addEventListener("DOMContentLoaded", () => {
     hallucinationEnabled: true,
     explainKey: "tokens",
     explainVisible: true,
+    saves: [],
   };
 
   const unlockRules = {
@@ -628,6 +635,44 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function renderSaves() {
+    savesListEl.innerHTML = "";
+    if (state.saves.length === 0) {
+      const row = document.createElement("div");
+      row.className = "score-row";
+      row.textContent = "No saved runs yet.";
+      savesListEl.appendChild(row);
+      return;
+    }
+
+    state.saves.forEach((entry) => {
+      const row = document.createElement("div");
+      row.className = "score-row";
+
+      const label = document.createElement("div");
+      label.textContent = entry.name;
+
+      const buttonWrap = document.createElement("div");
+      buttonWrap.className = "sampling-actions";
+
+      const loadBtn = document.createElement("button");
+      loadBtn.className = "generation-button";
+      loadBtn.textContent = "Load";
+      loadBtn.addEventListener("click", () => {
+        applyRunSnapshot(entry.snapshot);
+        state.replaySnapshot = entry.snapshot;
+        state.replayIndex = 0;
+        renderReplay();
+        savesMessageEl.textContent = `Loaded: ${entry.name}`;
+      });
+
+      buttonWrap.appendChild(loadBtn);
+      row.append(label, buttonWrap, document.createElement("div"));
+      row.replaceChild(buttonWrap, row.children[1]);
+      savesListEl.appendChild(row);
+    });
+  }
+
   function showUnlockToast(message) {
     if (unlockToastTimer) {
       clearTimeout(unlockToastTimer);
@@ -816,6 +861,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderScores();
     renderExplanation();
     renderFailureBanner();
+    renderSaves();
   }
 
   function buildRunSnapshot() {
@@ -899,6 +945,33 @@ window.addEventListener("DOMContentLoaded", () => {
     renderDiagnostics();
     renderScores();
     renderFailureBanner();
+  }
+
+  function saveRunToList() {
+    const snapshot = buildRunSnapshot();
+    const entry = {
+      id: Date.now().toString(36),
+      name: `Run ${new Date().toLocaleTimeString()}`,
+      snapshot,
+    };
+    state.saves = [entry, ...state.saves].slice(0, 10);
+    localStorage.setItem("llm-edu:saves", JSON.stringify(state.saves));
+    savesMessageEl.textContent = `Saved: ${entry.name}`;
+    renderSaves();
+  }
+
+  function loadSaves() {
+    const raw = localStorage.getItem("llm-edu:saves");
+    if (!raw) {
+      state.saves = [];
+      return;
+    }
+    try {
+      state.saves = JSON.parse(raw);
+    } catch (err) {
+      state.saves = [];
+      savesMessageEl.textContent = "Saved runs are corrupted.";
+    }
   }
 
   function replayRun() {
@@ -1082,6 +1155,10 @@ window.addEventListener("DOMContentLoaded", () => {
     renderScores();
   });
 
+  saveRunEl.addEventListener("click", () => {
+    saveRunToList();
+  });
+
   sandboxToggleEl.addEventListener("change", () => {
     state.sandboxMode = sandboxToggleEl.checked;
     sandboxBannerEl.hidden = !state.sandboxMode;
@@ -1203,6 +1280,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }));
   state.diagnostics = [];
   state.scores = [];
+  loadSaves();
   hallucinationToggleEl.checked = state.hallucinationEnabled;
   renderExplanation();
 
