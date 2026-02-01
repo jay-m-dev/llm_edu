@@ -888,6 +888,40 @@ textarea {
   color: #3a7a4e;
 }
 
+.checklist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checklist-row {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e3e0d6;
+  background: #f8f6ef;
+  font-size: 12px;
+}
+
+.checklist-box {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 2px solid #b5a88e;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #3a7a4e;
+}
+
+.checklist-row.done .checklist-box {
+  border-color: #3a7a4e;
+}
+
 .breakdown-list {
   display: flex;
   flex-direction: column;

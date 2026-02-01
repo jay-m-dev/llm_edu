@@ -80,6 +80,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const breakdownListEl = document.getElementById("breakdown-list");
   const breakdownEmptyEl = document.getElementById("breakdown-empty");
   const progressListEl = document.getElementById("progress-list");
+  const checklistListEl = document.getElementById("checklist-list");
+  const checklistResetEl = document.getElementById("checklist-reset");
   const scoresListEl = document.getElementById("scores-list");
   const scoresEvaluateEl = document.getElementById("scores-evaluate");
   const savesListEl = document.getElementById("saves-list");
@@ -198,6 +200,8 @@ window.addEventListener("DOMContentLoaded", () => {
     !breakdownListEl ||
     !breakdownEmptyEl ||
     !progressListEl ||
+    !checklistListEl ||
+    !checklistResetEl ||
     !scoresListEl ||
     !scoresEvaluateEl ||
     !savesListEl ||
@@ -315,6 +319,7 @@ window.addEventListener("DOMContentLoaded", () => {
     glossaryQuery: "",
     previousRun: null,
     progress: {},
+    checklist: {},
     settings: {
       hints: true,
       animSpeed: 1,
@@ -383,6 +388,33 @@ window.addEventListener("DOMContentLoaded", () => {
       id: "tutorial",
       title: "Tutorial loop",
       detail: "Finish the interactive tutorial steps.",
+    },
+  ];
+
+  const checklistItems = [
+    {
+      id: "tokenize",
+      text: "Type a prompt and watch tokens update.",
+    },
+    {
+      id: "generate",
+      text: "Play or step through token generation.",
+    },
+    {
+      id: "inspect",
+      text: "Click a token to inspect its embedding.",
+    },
+    {
+      id: "adjust",
+      text: "Change memory size or surprise settings.",
+    },
+    {
+      id: "sample",
+      text: "Run a sampling draw.",
+    },
+    {
+      id: "save",
+      text: "Save a run for replay.",
     },
   ];
 
@@ -1056,6 +1088,10 @@ window.addEventListener("DOMContentLoaded", () => {
     advanceTutorialIfReady();
   }
 
+  function markChecklistAdjusted() {
+    markChecklistItem("adjust");
+  }
+
   function renderTutorial() {
     const isTutorial = state.scenarioId === "tutorial";
     tutorialPanelEl.hidden = !isTutorial;
@@ -1262,6 +1298,46 @@ window.addEventListener("DOMContentLoaded", () => {
 
       row.append(status, detail);
       progressListEl.appendChild(row);
+    });
+  }
+
+  function persistChecklist() {
+    localStorage.setItem("llm-edu:checklist", JSON.stringify(state.checklist));
+  }
+
+  function markChecklistItem(id) {
+    if (state.checklist[id]) {
+      return;
+    }
+    state.checklist[id] = true;
+    persistChecklist();
+    renderChecklist();
+  }
+
+  function resetChecklist() {
+    state.checklist = {};
+    persistChecklist();
+    renderChecklist();
+  }
+
+  function renderChecklist() {
+    checklistListEl.innerHTML = "";
+    checklistItems.forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "checklist-row";
+      if (state.checklist[item.id]) {
+        row.classList.add("done");
+      }
+
+      const box = document.createElement("div");
+      box.className = "checklist-box";
+      box.textContent = state.checklist[item.id] ? "✓" : "";
+
+      const text = document.createElement("div");
+      text.textContent = item.text;
+
+      row.append(box, text);
+      checklistListEl.appendChild(row);
     });
   }
 
@@ -1905,6 +1981,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderAttention();
     state.explainKey = "tokens";
     renderExplanation();
+    markChecklistItem("inspect");
     if (state.scenarioId === "tutorial") {
       state.tutorialInspected = true;
       advanceTutorialIfReady();
@@ -1914,6 +1991,11 @@ window.addEventListener("DOMContentLoaded", () => {
   inputEl.addEventListener("input", update);
   inputEl.addEventListener("change", update);
   inputEl.addEventListener("keyup", update);
+  inputEl.addEventListener("input", () => {
+    if (inputEl.value.trim()) {
+      markChecklistItem("tokenize");
+    }
+  });
 
   const stages = getPipelineStages();
   pipelineStageEl.innerHTML = "";
@@ -1941,6 +2023,7 @@ window.addEventListener("DOMContentLoaded", () => {
     state.explainKey = "context";
     renderExplanation();
     markTutorialAdjusted();
+    markChecklistAdjusted();
   });
 
   contextSizeSliderEl.addEventListener("input", () => {
@@ -1953,6 +2036,7 @@ window.addEventListener("DOMContentLoaded", () => {
     state.explainKey = "context";
     renderExplanation();
     markTutorialAdjusted();
+    markChecklistAdjusted();
   });
 
   samplingSeedEl.addEventListener("input", () => {
@@ -1961,6 +2045,7 @@ window.addEventListener("DOMContentLoaded", () => {
     updateSamplingDistribution();
     renderSampling();
     markTutorialAdjusted();
+    markChecklistAdjusted();
   });
 
   samplingTempEl.addEventListener("input", () => {
@@ -1974,6 +2059,7 @@ window.addEventListener("DOMContentLoaded", () => {
     state.explainKey = "sampling";
     renderExplanation();
     markTutorialAdjusted();
+    markChecklistAdjusted();
   });
 
   samplingTempSliderEl.addEventListener("input", () => {
@@ -1987,6 +2073,7 @@ window.addEventListener("DOMContentLoaded", () => {
     state.explainKey = "sampling";
     renderExplanation();
     markTutorialAdjusted();
+    markChecklistAdjusted();
   });
 
   samplingRandomEl.addEventListener("input", () => {
@@ -2000,6 +2087,7 @@ window.addEventListener("DOMContentLoaded", () => {
     state.explainKey = "sampling";
     renderExplanation();
     markTutorialAdjusted();
+    markChecklistAdjusted();
   });
 
   samplingRandomSliderEl.addEventListener("input", () => {
@@ -2013,6 +2101,7 @@ window.addEventListener("DOMContentLoaded", () => {
     state.explainKey = "sampling";
     renderExplanation();
     markTutorialAdjusted();
+    markChecklistAdjusted();
   });
 
   samplingRunEl.addEventListener("click", () => {
@@ -2025,6 +2114,7 @@ window.addEventListener("DOMContentLoaded", () => {
     state.samplingSelectedIndex = result.selectedIndex;
     renderSampling();
     recordEvent("run_step", { note: "Sample draw" });
+    markChecklistItem("sample");
   });
 
   runSaveEl.addEventListener("click", () => {
@@ -2032,6 +2122,7 @@ window.addEventListener("DOMContentLoaded", () => {
     saveRun();
     renderSampling();
     recordEvent("run_complete", { note: "Recorded run" });
+    markChecklistItem("save");
   });
 
   runReplayEl.addEventListener("click", () => {
@@ -2212,6 +2303,10 @@ window.addEventListener("DOMContentLoaded", () => {
     renderBreakdown();
   });
 
+  checklistResetEl.addEventListener("click", () => {
+    resetChecklist();
+  });
+
   runResetEl.addEventListener("click", () => {
     const confirmed = window.confirm("Reset this run? This only clears the current output.");
     if (!confirmed) {
@@ -2315,6 +2410,7 @@ window.addEventListener("DOMContentLoaded", () => {
   generationPlayEl.addEventListener("click", () => {
     startGeneration();
     recordEvent("run_start", { note: "Generation play" });
+    markChecklistItem("generate");
   });
 
   generationPauseEl.addEventListener("click", () => {
@@ -2326,6 +2422,7 @@ window.addEventListener("DOMContentLoaded", () => {
     ensureClock();
     state.generationClock.step();
     recordEvent("run_step", { note: `Step ${state.generationIndex}` });
+    markChecklistItem("generate");
   });
 
   generationSpeedEl.addEventListener("input", () => {
@@ -2470,6 +2567,14 @@ window.addEventListener("DOMContentLoaded", () => {
       state.progress = {};
     }
   }
+  const storedChecklist = localStorage.getItem("llm-edu:checklist");
+  if (storedChecklist) {
+    try {
+      state.checklist = JSON.parse(storedChecklist);
+    } catch (err) {
+      state.checklist = {};
+    }
+  }
   settingsHintsEl.checked = state.settings.hints;
   settingsAnimEl.value = String(state.settings.animSpeed);
   settingsSoundEl.checked = state.settings.sound;
@@ -2487,6 +2592,7 @@ window.addEventListener("DOMContentLoaded", () => {
   renderBreakdown();
   renderGlossary();
   renderProgress();
+  renderChecklist();
 
   document.querySelectorAll("[data-tooltip]").forEach((element) => {
     element.classList.add("tooltip-target");
