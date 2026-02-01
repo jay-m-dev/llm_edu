@@ -235,6 +235,24 @@
             </div>
             <div id="presets-list" class="scores-list"></div>
           </div>
+
+          <div id="settings-panel" class="generation-panel">
+            <div class="generation-header">
+              <div class="generation-title">Settings</div>
+            </div>
+            <div class="context-controls">
+              <label class="context-label" for="settings-hints">Hints</label>
+              <input id="settings-hints" type="checkbox" checked />
+            </div>
+            <div class="context-controls">
+              <label class="context-label" for="settings-anim">Animation speed</label>
+              <input id="settings-anim" class="sampling-input" type="number" step="0.1" min="0.2" value="1" />
+            </div>
+            <div class="context-controls">
+              <label class="context-label" for="settings-sound">Sound</label>
+              <input id="settings-sound" type="checkbox" />
+            </div>
+          </div>
         </section>
         <aside id="explain-panel" class="explain-panel">
           <div class="explain-header">

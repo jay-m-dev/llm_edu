@@ -88,6 +88,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const scenarioFailureEl = document.getElementById("scenario-failure");
   const presetsListEl = document.getElementById("presets-list");
   const presetSaveEl = document.getElementById("preset-save");
+  const settingsHintsEl = document.getElementById("settings-hints");
+  const settingsAnimEl = document.getElementById("settings-anim");
+  const settingsSoundEl = document.getElementById("settings-sound");
   const unlockToastEl = document.getElementById("unlock-toast");
   const failureBannerEl = document.getElementById("failure-banner");
   const failureTitleEl = document.querySelector(".failure-title");
@@ -173,6 +176,9 @@ window.addEventListener("DOMContentLoaded", () => {
     !scenarioFailureEl ||
     !presetsListEl ||
     !presetSaveEl ||
+    !settingsHintsEl ||
+    !settingsAnimEl ||
+    !settingsSoundEl ||
     !unlockToastEl ||
     !failureBannerEl ||
     !failureTitleEl ||
@@ -232,6 +238,11 @@ window.addEventListener("DOMContentLoaded", () => {
     maxSteps: 80,
     limitsHit: false,
     onboardingStep: 0,
+    settings: {
+      hints: true,
+      animSpeed: 1,
+      sound: false,
+    },
   };
 
   const onboardingSteps = [
@@ -831,6 +842,19 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function applySettings() {
+    state.explainVisible = state.settings.hints;
+    renderExplanation();
+    state.generationSpeed = state.settings.animSpeed;
+    if (state.generationClock) {
+      state.generationClock.setSpeed(state.generationSpeed);
+    }
+  }
+
+  function persistSettings() {
+    localStorage.setItem("llm-edu:settings", JSON.stringify(state.settings));
+  }
+
   function showUnlockToast(message) {
     if (unlockToastTimer) {
       clearTimeout(unlockToastTimer);
@@ -1418,6 +1442,24 @@ window.addEventListener("DOMContentLoaded", () => {
     renderPresets();
   });
 
+  settingsHintsEl.addEventListener("change", () => {
+    state.settings.hints = settingsHintsEl.checked;
+    applySettings();
+    persistSettings();
+  });
+
+  settingsAnimEl.addEventListener("input", () => {
+    const parsed = Number.parseFloat(settingsAnimEl.value);
+    state.settings.animSpeed = Number.isNaN(parsed) ? 1 : Math.max(parsed, 0.2);
+    applySettings();
+    persistSettings();
+  });
+
+  settingsSoundEl.addEventListener("change", () => {
+    state.settings.sound = settingsSoundEl.checked;
+    persistSettings();
+  });
+
   saveRunEl.addEventListener("click", () => {
     saveRunToList();
   });
@@ -1591,6 +1633,18 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   renderPresets();
   loadSaves();
+  const storedSettings = localStorage.getItem("llm-edu:settings");
+  if (storedSettings) {
+    try {
+      state.settings = { ...state.settings, ...JSON.parse(storedSettings) };
+    } catch (err) {
+      // Ignore malformed settings.
+    }
+  }
+  settingsHintsEl.checked = state.settings.hints;
+  settingsAnimEl.value = String(state.settings.animSpeed);
+  settingsSoundEl.checked = state.settings.sound;
+  applySettings();
   const onboardingDone = localStorage.getItem("llm-edu:onboarding") === "done";
   if (!onboardingDone) {
     state.onboardingStep = 0;
