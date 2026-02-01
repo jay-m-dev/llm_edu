@@ -91,6 +91,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const scenarioIntroEl = document.getElementById("scenario-intro");
   const scenarioObjectiveEl = document.getElementById("scenario-objective");
   const scenarioFailureEl = document.getElementById("scenario-failure");
+  const tutorialPanelEl = document.getElementById("tutorial-panel");
+  const tutorialProgressEl = document.getElementById("tutorial-progress");
+  const tutorialCompleteEl = document.getElementById("tutorial-complete");
   const presetsListEl = document.getElementById("presets-list");
   const presetSaveEl = document.getElementById("preset-save");
   const settingsHintsEl = document.getElementById("settings-hints");
@@ -189,6 +192,9 @@ window.addEventListener("DOMContentLoaded", () => {
     !scenarioIntroEl ||
     !scenarioObjectiveEl ||
     !scenarioFailureEl ||
+    !tutorialPanelEl ||
+    !tutorialProgressEl ||
+    !tutorialCompleteEl ||
     !presetsListEl ||
     !presetSaveEl ||
     !settingsHintsEl ||
@@ -263,6 +269,10 @@ window.addEventListener("DOMContentLoaded", () => {
     onboardingStep: 0,
     advancedUnlocked: false,
     selectedPromptIndex: 0,
+    tutorialStep: 0,
+    tutorialInspected: false,
+    tutorialAdjusted: false,
+    tutorialComplete: false,
     settings: {
       hints: true,
       animSpeed: 1,
@@ -288,6 +298,24 @@ window.addEventListener("DOMContentLoaded", () => {
     {
       title: "Adjust",
       body: "Change parameters to make the run more stable or more playful.",
+    },
+  ];
+
+  const tutorialSteps = [
+    {
+      id: "run",
+      title: "Run tokens",
+      detail: "Press Play or Step to generate at least one token.",
+    },
+    {
+      id: "inspect",
+      title: "Inspect a token",
+      detail: "Click a token to view its embedding and attention.",
+    },
+    {
+      id: "adjust",
+      title: "Adjust a control",
+      detail: "Change context size, temperature, or randomness.",
     },
   ];
 
@@ -602,6 +630,7 @@ window.addEventListener("DOMContentLoaded", () => {
         attentionHeatmapLabelsEl.appendChild(label);
       });
     }
+    advanceTutorialIfReady();
     renderCTA();
   }
 
@@ -853,6 +882,85 @@ window.addEventListener("DOMContentLoaded", () => {
       scenarioObjectiveEl.textContent = `Objective: ${objective.description} (${objective.passed ? "Pass" : "Fail"})`;
     } else {
       scenarioObjectiveEl.textContent = `Objective: ${scenario.objectiveId} (not evaluated)`;
+    }
+    renderTutorial();
+  }
+
+  function resetTutorialState() {
+    state.tutorialStep = 0;
+    state.tutorialInspected = false;
+    state.tutorialAdjusted = false;
+    state.tutorialComplete = false;
+  }
+
+  function advanceTutorialIfReady() {
+    if (state.scenarioId !== "tutorial") {
+      return;
+    }
+    const completions = [
+      state.generatedTokens.length > 0,
+      state.tutorialInspected && state.generatedTokens.length > 0,
+      state.tutorialAdjusted,
+    ];
+
+    while (
+      state.tutorialStep < completions.length &&
+      completions[state.tutorialStep]
+    ) {
+      state.tutorialStep += 1;
+    }
+
+    if (state.tutorialStep >= completions.length) {
+      state.tutorialComplete = true;
+    }
+
+    renderTutorial();
+  }
+
+  function markTutorialAdjusted() {
+    if (state.scenarioId !== "tutorial") {
+      return;
+    }
+    state.tutorialAdjusted = true;
+    advanceTutorialIfReady();
+  }
+
+  function renderTutorial() {
+    const isTutorial = state.scenarioId === "tutorial";
+    tutorialPanelEl.hidden = !isTutorial;
+    if (!isTutorial) {
+      return;
+    }
+
+    tutorialProgressEl.innerHTML = "";
+    tutorialSteps.forEach((step, index) => {
+      const row = document.createElement("div");
+      row.className = "tutorial-row";
+
+      const status = document.createElement("div");
+      status.className = "tutorial-status";
+      let statusText = "Locked";
+      if (index < state.tutorialStep) {
+        statusText = "Done";
+        status.classList.add("done");
+      } else if (index === state.tutorialStep) {
+        statusText = "Next";
+      }
+      status.textContent = statusText;
+
+      const detail = document.createElement("div");
+      detail.textContent = `${step.title}: ${step.detail}`;
+
+      row.append(status, detail);
+      tutorialProgressEl.appendChild(row);
+    });
+
+    if (state.tutorialComplete) {
+      tutorialCompleteEl.textContent =
+        "Completed: You ran a deterministic loop, inspected the output, and tuned the controls.";
+      tutorialCompleteEl.hidden = false;
+    } else {
+      tutorialCompleteEl.hidden = true;
     }
   }
 
@@ -1449,6 +1557,10 @@ window.addEventListener("DOMContentLoaded", () => {
     renderAttention();
     state.explainKey = "tokens";
     renderExplanation();
+    if (state.scenarioId === "tutorial") {
+      state.tutorialInspected = true;
+      advanceTutorialIfReady();
+    }
   });
 
   inputEl.addEventListener("input", update);
@@ -1480,6 +1592,7 @@ window.addEventListener("DOMContentLoaded", () => {
     update();
     state.explainKey = "context";
     renderExplanation();
+    markTutorialAdjusted();
   });
 
   contextSizeSliderEl.addEventListener("input", () => {
@@ -1491,6 +1604,7 @@ window.addEventListener("DOMContentLoaded", () => {
     update();
     state.explainKey = "context";
     renderExplanation();
+    markTutorialAdjusted();
   });
 
   samplingSeedEl.addEventListener("input", () => {
@@ -1498,6 +1612,7 @@ window.addEventListener("DOMContentLoaded", () => {
     state.samplingSeed = Number.isNaN(parsed) ? 0 : parsed;
     updateSamplingDistribution();
     renderSampling();
+    markTutorialAdjusted();
   });
 
   samplingTempEl.addEventListener("input", () => {
@@ -1510,6 +1625,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderSampling();
     state.explainKey = "sampling";
     renderExplanation();
+    markTutorialAdjusted();
   });
 
   samplingTempSliderEl.addEventListener("input", () => {
@@ -1522,6 +1638,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderSampling();
     state.explainKey = "sampling";
     renderExplanation();
+    markTutorialAdjusted();
   });
 
   samplingRandomEl.addEventListener("input", () => {
@@ -1534,6 +1651,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderSampling();
     state.explainKey = "sampling";
     renderExplanation();
+    markTutorialAdjusted();
   });
 
   samplingRandomSliderEl.addEventListener("input", () => {
@@ -1546,6 +1664,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderSampling();
     state.explainKey = "sampling";
     renderExplanation();
+    markTutorialAdjusted();
   });
 
   samplingRunEl.addEventListener("click", () => {
@@ -1602,6 +1721,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
   scenarioSelectEl.addEventListener("change", () => {
     state.scenarioId = scenarioSelectEl.value;
+    if (state.scenarioId === "tutorial") {
+      resetTutorialState();
+    }
     const scenario = findScenario(state.scenarioId);
     state.useAltPrompt = false;
     inputEl.value = scenario.prompt;
@@ -1620,6 +1742,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
   scenarioResetEl.addEventListener("click", () => {
     state.scenarioId = scenarios[0].id;
+    if (state.scenarioId === "tutorial") {
+      resetTutorialState();
+    }
     const scenario = findScenario(state.scenarioId);
     state.useAltPrompt = false;
     inputEl.value = scenario.prompt;
@@ -1899,6 +2024,9 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   scenarioSelectEl.value = state.scenarioId;
   const scenario = findScenario(state.scenarioId);
+  if (state.scenarioId === "tutorial") {
+    resetTutorialState();
+  }
   inputEl.value = scenario.prompt;
   if (scenario.params) {
     state.contextSize = scenario.params.contextSize;

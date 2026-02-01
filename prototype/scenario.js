@@ -10,6 +10,16 @@ export const scenarios = [
     prompt: "Hello world from the simulator.",
   },
   {
+    id: "tutorial",
+    name: "Interactive Tutorial",
+    summary: "Follow a guided loop: run, inspect, adjust.",
+    intro: "Complete each step to learn the core loop hands-on.",
+    objectiveId: "stable-sampling",
+    failureHint: "If the output drifts, lower randomness or temperature.",
+    params: { contextSize: 12, samplingTemp: 1, samplingRandom: 0.2, samplingSeed: 1337 },
+    prompt: "Write a short greeting and then summarize it in three words.",
+  },
+  {
     id: "context-drop",
     name: "Context Drop",
     summary: "See how tokens fall out of view.",
