@@ -176,6 +176,27 @@ textarea {
   color: #2f6b4b;
 }
 
+.failure-banner {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #f1c6c6;
+  background: #fff1f1;
+  font-size: 12px;
+  color: #7a2e2e;
+  display: grid;
+  gap: 6px;
+}
+
+.failure-title {
+  font-weight: 700;
+}
+
+.failure-cause,
+.failure-hint {
+  color: #7a2e2e;
+}
+
 .token-list {
   display: flex;
   flex-direction: column;

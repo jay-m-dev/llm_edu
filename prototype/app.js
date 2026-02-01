@@ -67,6 +67,11 @@ window.addEventListener("DOMContentLoaded", () => {
   const scoresListEl = document.getElementById("scores-list");
   const scoresEvaluateEl = document.getElementById("scores-evaluate");
   const unlockToastEl = document.getElementById("unlock-toast");
+  const failureBannerEl = document.getElementById("failure-banner");
+  const failureTitleEl = document.querySelector(".failure-title");
+  const failureCauseEl = document.querySelector(".failure-cause");
+  const failureHintEl = document.querySelector(".failure-hint");
+  const failureRetryEl = document.getElementById("failure-retry");
   const lockContextBadgeEl = document.getElementById("lock-context-size");
   const lockTempBadgeEl = document.getElementById("lock-sampling-temp");
   const lockRandomBadgeEl = document.getElementById("lock-sampling-random");
@@ -128,6 +133,11 @@ window.addEventListener("DOMContentLoaded", () => {
     !scoresListEl ||
     !scoresEvaluateEl ||
     !unlockToastEl ||
+    !failureBannerEl ||
+    !failureTitleEl ||
+    !failureCauseEl ||
+    !failureHintEl ||
+    !failureRetryEl ||
     !lockContextBadgeEl ||
     !lockTempBadgeEl ||
     !lockRandomBadgeEl ||
@@ -565,6 +575,18 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function renderFailureBanner() {
+    if (state.diagnostics.length === 0) {
+      failureBannerEl.hidden = true;
+      return;
+    }
+    const primary = state.diagnostics[0];
+    failureTitleEl.textContent = "Run needs adjustment";
+    failureCauseEl.textContent = `Cause: ${primary.cause}`;
+    failureHintEl.textContent = `Try: ${primary.hint}`;
+    failureBannerEl.hidden = false;
+  }
+
   function renderScores() {
     scoresListEl.innerHTML = "";
     if (state.sandboxMode) {
@@ -793,6 +815,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderDiagnostics();
     renderScores();
     renderExplanation();
+    renderFailureBanner();
   }
 
   function buildRunSnapshot() {
@@ -875,6 +898,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderObjectives();
     renderDiagnostics();
     renderScores();
+    renderFailureBanner();
   }
 
   function replayRun() {
@@ -1049,6 +1073,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const snapshot = buildRunSnapshot();
     state.diagnostics = detectFailures(snapshot);
     renderDiagnostics();
+    renderFailureBanner();
   });
 
   scoresEvaluateEl.addEventListener("click", () => {
@@ -1098,6 +1123,13 @@ window.addEventListener("DOMContentLoaded", () => {
     state.replayIndex = 0;
     replayOutputEl.innerHTML = "";
     replayStatusEl.textContent = "Idle";
+  });
+
+  failureRetryEl.addEventListener("click", () => {
+    resetGeneration();
+    state.diagnostics = [];
+    renderDiagnostics();
+    renderFailureBanner();
   });
 
   generationPlayEl.addEventListener("click", () => {
