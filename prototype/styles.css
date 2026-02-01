@@ -129,6 +129,25 @@ textarea {
   font-size: 13px;
 }
 
+.slider-row {
+  display: grid;
+  grid-template-columns: 70px 1fr 40px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.slider-input {
+  width: 100%;
+}
+
+.slider-value {
+  text-align: right;
+  font-family: "Courier New", monospace;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .lock-badge {
   display: inline-block;
   margin-left: 6px;

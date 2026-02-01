@@ -21,11 +21,17 @@ window.addEventListener("DOMContentLoaded", () => {
   const pipelineStageEl = document.getElementById("pipeline-stage");
   const pipelineListEl = document.getElementById("pipeline-list");
   const contextSizeEl = document.getElementById("context-size");
+  const contextSizeSliderEl = document.getElementById("context-size-slider");
+  const contextSizeValueEl = document.getElementById("context-size-value");
   const contextActiveEl = document.getElementById("context-active");
   const contextDroppedEl = document.getElementById("context-dropped");
   const samplingSeedEl = document.getElementById("sampling-seed");
   const samplingTempEl = document.getElementById("sampling-temp");
+  const samplingTempSliderEl = document.getElementById("sampling-temp-slider");
+  const samplingTempValueEl = document.getElementById("sampling-temp-value");
   const samplingRandomEl = document.getElementById("sampling-random");
+  const samplingRandomSliderEl = document.getElementById("sampling-random-slider");
+  const samplingRandomValueEl = document.getElementById("sampling-random-value");
   const samplingRunEl = document.getElementById("sampling-run");
   const samplingListEl = document.getElementById("sampling-list");
   const samplingResultEl = document.getElementById("sampling-result");
@@ -73,11 +79,17 @@ window.addEventListener("DOMContentLoaded", () => {
     !pipelineStageEl ||
     !pipelineListEl ||
     !contextSizeEl ||
+    !contextSizeSliderEl ||
+    !contextSizeValueEl ||
     !contextActiveEl ||
     !contextDroppedEl ||
     !samplingSeedEl ||
     !samplingTempEl ||
+    !samplingTempSliderEl ||
+    !samplingTempValueEl ||
     !samplingRandomEl ||
+    !samplingRandomSliderEl ||
+    !samplingRandomValueEl ||
     !samplingRunEl ||
     !samplingListEl ||
     !samplingResultEl ||
@@ -608,10 +620,24 @@ window.addEventListener("DOMContentLoaded", () => {
       inputs[key].classList.toggle("locked-input", !unlocked);
       badges[key].style.display = unlocked ? "none" : "inline-block";
     });
+    contextSizeSliderEl.disabled = contextSizeEl.disabled;
+    samplingTempSliderEl.disabled = samplingTempEl.disabled;
+    samplingRandomSliderEl.disabled = samplingRandomEl.disabled;
   }
 
   function persistUnlocks() {
     localStorage.setItem("llm-edu:unlocks", JSON.stringify(state.unlockState));
+  }
+
+  function persistParams() {
+    localStorage.setItem(
+      "llm-edu:params",
+      JSON.stringify({
+        contextSize: state.contextSize,
+        samplingTemp: state.samplingTemp,
+        samplingRandom: state.samplingRandom,
+      })
+    );
   }
 
   function applyUnlockResults(results) {
@@ -893,6 +919,18 @@ window.addEventListener("DOMContentLoaded", () => {
   contextSizeEl.addEventListener("input", () => {
     const parsed = Number.parseInt(contextSizeEl.value, 10);
     state.contextSize = Number.isNaN(parsed) ? 0 : Math.max(parsed, 0);
+    contextSizeSliderEl.value = String(state.contextSize);
+    contextSizeValueEl.textContent = String(state.contextSize);
+    persistParams();
+    update();
+  });
+
+  contextSizeSliderEl.addEventListener("input", () => {
+    const parsed = Number.parseInt(contextSizeSliderEl.value, 10);
+    state.contextSize = Number.isNaN(parsed) ? 0 : Math.max(parsed, 0);
+    contextSizeEl.value = String(state.contextSize);
+    contextSizeValueEl.textContent = String(state.contextSize);
+    persistParams();
     update();
   });
 
@@ -906,6 +944,19 @@ window.addEventListener("DOMContentLoaded", () => {
   samplingTempEl.addEventListener("input", () => {
     const parsed = Number.parseFloat(samplingTempEl.value);
     state.samplingTemp = Number.isNaN(parsed) ? 1 : parsed;
+    samplingTempSliderEl.value = String(state.samplingTemp);
+    samplingTempValueEl.textContent = state.samplingTemp.toFixed(1);
+    persistParams();
+    updateSamplingDistribution();
+    renderSampling();
+  });
+
+  samplingTempSliderEl.addEventListener("input", () => {
+    const parsed = Number.parseFloat(samplingTempSliderEl.value);
+    state.samplingTemp = Number.isNaN(parsed) ? 1 : parsed;
+    samplingTempEl.value = String(state.samplingTemp);
+    samplingTempValueEl.textContent = state.samplingTemp.toFixed(1);
+    persistParams();
     updateSamplingDistribution();
     renderSampling();
   });
@@ -913,6 +964,19 @@ window.addEventListener("DOMContentLoaded", () => {
   samplingRandomEl.addEventListener("input", () => {
     const parsed = Number.parseFloat(samplingRandomEl.value);
     state.samplingRandom = Number.isNaN(parsed) ? 0 : parsed;
+    samplingRandomSliderEl.value = String(state.samplingRandom);
+    samplingRandomValueEl.textContent = state.samplingRandom.toFixed(2);
+    persistParams();
+    updateSamplingDistribution();
+    renderSampling();
+  });
+
+  samplingRandomSliderEl.addEventListener("input", () => {
+    const parsed = Number.parseFloat(samplingRandomSliderEl.value);
+    state.samplingRandom = Number.isNaN(parsed) ? 0 : parsed;
+    samplingRandomEl.value = String(state.samplingRandom);
+    samplingRandomValueEl.textContent = state.samplingRandom.toFixed(2);
+    persistParams();
     updateSamplingDistribution();
     renderSampling();
   });
@@ -1022,11 +1086,35 @@ window.addEventListener("DOMContentLoaded", () => {
     renderGeneration();
   });
 
+  const storedParams = localStorage.getItem("llm-edu:params");
+  if (storedParams) {
+    try {
+      const parsed = JSON.parse(storedParams);
+      if (Number.isFinite(parsed.contextSize)) {
+        state.contextSize = parsed.contextSize;
+      }
+      if (Number.isFinite(parsed.samplingTemp)) {
+        state.samplingTemp = parsed.samplingTemp;
+      }
+      if (Number.isFinite(parsed.samplingRandom)) {
+        state.samplingRandom = parsed.samplingRandom;
+      }
+    } catch (err) {
+      // Ignore malformed stored params.
+    }
+  }
+
   inputEl.value = "Hello, world!\nTokenize this: A_B test.";
   contextSizeEl.value = String(state.contextSize);
+  contextSizeSliderEl.value = String(state.contextSize);
+  contextSizeValueEl.textContent = String(state.contextSize);
   samplingSeedEl.value = String(state.samplingSeed);
   samplingTempEl.value = String(state.samplingTemp);
+  samplingTempSliderEl.value = String(state.samplingTemp);
+  samplingTempValueEl.textContent = state.samplingTemp.toFixed(1);
   samplingRandomEl.value = String(state.samplingRandom);
+  samplingRandomSliderEl.value = String(state.samplingRandom);
+  samplingRandomValueEl.textContent = state.samplingRandom.toFixed(2);
   replaySpeedEl.value = String(state.replaySpeed);
   state.objectives = getObjectives().map((objective) => ({
     id: objective.id,
