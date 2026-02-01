@@ -74,6 +74,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const scenarioSelectEl = document.getElementById("scenario-select");
   const scenarioResetEl = document.getElementById("scenario-reset");
   const scenarioSummaryEl = document.getElementById("scenario-summary");
+  const scenarioIntroEl = document.getElementById("scenario-intro");
+  const scenarioObjectiveEl = document.getElementById("scenario-objective");
+  const scenarioFailureEl = document.getElementById("scenario-failure");
   const presetsListEl = document.getElementById("presets-list");
   const presetSaveEl = document.getElementById("preset-save");
   const unlockToastEl = document.getElementById("unlock-toast");
@@ -148,6 +151,9 @@ window.addEventListener("DOMContentLoaded", () => {
     !scenarioSelectEl ||
     !scenarioResetEl ||
     !scenarioSummaryEl ||
+    !scenarioIntroEl ||
+    !scenarioObjectiveEl ||
+    !scenarioFailureEl ||
     !presetsListEl ||
     !presetSaveEl ||
     !unlockToastEl ||
@@ -690,6 +696,14 @@ window.addEventListener("DOMContentLoaded", () => {
   function renderScenario() {
     const scenario = findScenario(state.scenarioId);
     scenarioSummaryEl.textContent = scenario.summary;
+    scenarioIntroEl.textContent = scenario.intro;
+    scenarioFailureEl.textContent = `Likely failure: ${scenario.failureHint}`;
+    const objective = state.objectives.find((item) => item.id === scenario.objectiveId);
+    if (objective) {
+      scenarioObjectiveEl.textContent = `Objective: ${objective.description} (${objective.passed ? "Pass" : "Fail"})`;
+    } else {
+      scenarioObjectiveEl.textContent = `Objective: ${scenario.objectiveId} (not evaluated)`;
+    }
   }
 
   function renderPresets() {
@@ -1212,6 +1226,7 @@ window.addEventListener("DOMContentLoaded", () => {
     applyUnlockResults(state.objectives);
     state.explainKey = "objectives";
     renderExplanation();
+    renderScenario();
   });
 
   diagnosticsEvaluateEl.addEventListener("click", () => {
@@ -1231,6 +1246,11 @@ window.addEventListener("DOMContentLoaded", () => {
     state.scenarioId = scenarioSelectEl.value;
     const scenario = findScenario(state.scenarioId);
     inputEl.value = scenario.prompt;
+    if (scenario.params) {
+      state.contextSize = scenario.params.contextSize;
+      state.samplingTemp = scenario.params.samplingTemp;
+      state.samplingRandom = scenario.params.samplingRandom;
+    }
     persistScenario();
     renderScenario();
     update();
@@ -1240,6 +1260,11 @@ window.addEventListener("DOMContentLoaded", () => {
     state.scenarioId = scenarios[0].id;
     const scenario = findScenario(state.scenarioId);
     inputEl.value = scenario.prompt;
+    if (scenario.params) {
+      state.contextSize = scenario.params.contextSize;
+      state.samplingTemp = scenario.params.samplingTemp;
+      state.samplingRandom = scenario.params.samplingRandom;
+    }
     persistScenario();
     renderScenario();
     update();
@@ -1407,6 +1432,11 @@ window.addEventListener("DOMContentLoaded", () => {
   scenarioSelectEl.value = state.scenarioId;
   const scenario = findScenario(state.scenarioId);
   inputEl.value = scenario.prompt;
+  if (scenario.params) {
+    state.contextSize = scenario.params.contextSize;
+    state.samplingTemp = scenario.params.samplingTemp;
+    state.samplingRandom = scenario.params.samplingRandom;
+  }
   renderScenario();
   const storedPresets = localStorage.getItem("llm-edu:presets");
   if (storedPresets) {
