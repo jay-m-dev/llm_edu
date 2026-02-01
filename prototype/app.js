@@ -101,11 +101,16 @@ window.addEventListener("DOMContentLoaded", () => {
   const failureOverlayHintEl = document.getElementById("failure-overlay-hint");
   const failureOverlayDismissEl = document.getElementById("failure-overlay-dismiss");
   const failureOverlayRetryEl = document.getElementById("failure-overlay-retry");
+  const summaryOverlayEl = document.getElementById("summary-overlay");
+  const summaryTitleEl = document.getElementById("summary-title");
+  const summaryListEl = document.getElementById("summary-list");
+  const summaryCloseEl = document.getElementById("summary-close");
   const scenarioSelectEl = document.getElementById("scenario-select");
   const scenarioResetEl = document.getElementById("scenario-reset");
+  const scenarioSummaryButtonEl = document.getElementById("scenario-summary-btn");
   const scenarioToggleEl = document.getElementById("scenario-toggle");
   const promptToggleEl = document.getElementById("prompt-toggle");
-  const scenarioSummaryEl = document.getElementById("scenario-summary");
+  const scenarioOverviewEl = document.getElementById("scenario-summary");
   const scenarioIntroEl = document.getElementById("scenario-intro");
   const scenarioObjectiveEl = document.getElementById("scenario-objective");
   const scenarioFailureEl = document.getElementById("scenario-failure");
@@ -221,11 +226,16 @@ window.addEventListener("DOMContentLoaded", () => {
     !failureOverlayHintEl ||
     !failureOverlayDismissEl ||
     !failureOverlayRetryEl ||
+    !summaryOverlayEl ||
+    !summaryTitleEl ||
+    !summaryListEl ||
+    !summaryCloseEl ||
     !scenarioSelectEl ||
     !scenarioResetEl ||
+    !scenarioSummaryButtonEl ||
     !scenarioToggleEl ||
     !promptToggleEl ||
-    !scenarioSummaryEl ||
+    !scenarioOverviewEl ||
     !scenarioIntroEl ||
     !scenarioObjectiveEl ||
     !scenarioFailureEl ||
@@ -320,6 +330,8 @@ window.addEventListener("DOMContentLoaded", () => {
     previousRun: null,
     progress: {},
     checklist: {},
+    lastSummary: null,
+    summaryShownFor: {},
     settings: {
       hints: true,
       animSpeed: 1,
@@ -1034,7 +1046,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function renderScenario() {
     const scenario = findScenario(state.scenarioId);
-    scenarioSummaryEl.textContent = scenario.summary;
+    scenarioOverviewEl.textContent = scenario.summary;
     scenarioIntroEl.textContent = scenario.intro;
     scenarioFailureEl.textContent = `Likely failure: ${scenario.failureHint}`;
     scenarioToggleEl.hidden = !scenario.promptAlt;
@@ -1046,6 +1058,71 @@ window.addEventListener("DOMContentLoaded", () => {
       scenarioObjectiveEl.textContent = `Objective: ${scenario.objectiveId} (not evaluated)`;
     }
     renderTutorial();
+  }
+
+  function buildScenarioSummary(scenario) {
+    const bullets = Array.isArray(scenario.lesson) ? scenario.lesson.slice(0, 3) : [];
+    if (bullets.length === 0) {
+      bullets.push("You completed the scenario and observed the model behavior.");
+      bullets.push("Small parameter changes can shift outputs quickly.");
+    }
+    return {
+      scenarioId: scenario.id,
+      title: `${scenario.name} Summary`,
+      bullets,
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  function persistSummary() {
+    if (!state.lastSummary) {
+      return;
+    }
+    localStorage.setItem("llm-edu:lastSummary", JSON.stringify(state.lastSummary));
+  }
+
+  function renderSummaryOverlay(summary) {
+    summaryTitleEl.textContent = summary.title;
+    summaryListEl.innerHTML = "";
+    summary.bullets.forEach((text) => {
+      const row = document.createElement("div");
+      row.className = "summary-item";
+      row.textContent = text;
+      summaryListEl.appendChild(row);
+    });
+  }
+
+  function showSummary(summary) {
+    renderSummaryOverlay(summary);
+    summaryOverlayEl.hidden = false;
+  }
+
+  function hideSummary() {
+    summaryOverlayEl.hidden = true;
+  }
+
+  function updateSummaryButton() {
+    scenarioSummaryButtonEl.disabled = !state.lastSummary;
+  }
+
+  function maybeShowScenarioSummary(objectives) {
+    if (!objectives || objectives.length === 0) {
+      return;
+    }
+    const scenario = findScenario(state.scenarioId);
+    const objective = objectives.find((item) => item.id === scenario.objectiveId);
+    if (!objective || !objective.passed) {
+      return;
+    }
+    if (state.summaryShownFor[scenario.id]) {
+      return;
+    }
+    const summary = buildScenarioSummary(scenario);
+    state.lastSummary = summary;
+    state.summaryShownFor[scenario.id] = true;
+    persistSummary();
+    showSummary(summary);
+    updateSummaryButton();
   }
 
   function resetTutorialState() {
@@ -1895,6 +1972,7 @@ window.addEventListener("DOMContentLoaded", () => {
       state.scores = scoreRun(snapshot);
       applyUnlockResults(state.objectives);
       updateProgressFromObjectives(state.objectives);
+      maybeShowScenarioSummary(state.objectives);
     }
     state.diagnostics = detectFailures(snapshot);
     renderObjectives();
@@ -2138,6 +2216,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderObjectives();
     applyUnlockResults(state.objectives);
     updateProgressFromObjectives(state.objectives);
+    maybeShowScenarioSummary(state.objectives);
     state.explainKey = "objectives";
     renderExplanation();
     renderScenario();
@@ -2305,6 +2384,17 @@ window.addEventListener("DOMContentLoaded", () => {
 
   checklistResetEl.addEventListener("click", () => {
     resetChecklist();
+  });
+
+  summaryCloseEl.addEventListener("click", () => {
+    hideSummary();
+  });
+
+  scenarioSummaryButtonEl.addEventListener("click", () => {
+    if (!state.lastSummary) {
+      return;
+    }
+    showSummary(state.lastSummary);
   });
 
   runResetEl.addEventListener("click", () => {
@@ -2575,6 +2665,14 @@ window.addEventListener("DOMContentLoaded", () => {
       state.checklist = {};
     }
   }
+  const storedSummary = localStorage.getItem("llm-edu:lastSummary");
+  if (storedSummary) {
+    try {
+      state.lastSummary = JSON.parse(storedSummary);
+    } catch (err) {
+      state.lastSummary = null;
+    }
+  }
   settingsHintsEl.checked = state.settings.hints;
   settingsAnimEl.value = String(state.settings.animSpeed);
   settingsSoundEl.checked = state.settings.sound;
@@ -2593,6 +2691,7 @@ window.addEventListener("DOMContentLoaded", () => {
   renderGlossary();
   renderProgress();
   renderChecklist();
+  updateSummaryButton();
 
   document.querySelectorAll("[data-tooltip]").forEach((element) => {
     element.classList.add("tooltip-target");

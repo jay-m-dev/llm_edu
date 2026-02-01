@@ -28,6 +28,15 @@
           </div>
         </div>
       </div>
+      <div id="summary-overlay" class="onboarding-overlay" hidden>
+        <div class="onboarding-modal">
+          <div id="summary-title" class="generation-title">Scenario Summary</div>
+          <div id="summary-list" class="summary-list"></div>
+          <div class="onboarding-actions">
+            <button id="summary-close" class="generation-button" type="button">Close</button>
+          </div>
+        </div>
+      </div>
       <div id="onboarding" class="onboarding-overlay" hidden>
         <div class="onboarding-modal">
           <div id="onboarding-step" class="generation-title"></div>
@@ -308,7 +317,10 @@
           <div id="scenario-panel" class="generation-panel">
             <div class="generation-header">
               <div class="generation-title" data-tooltip="Scenarios are guided tasks with a goal.">Scenario</div>
-              <button id="scenario-reset" class="generation-button" type="button">Reset Scenario</button>
+              <div class="scenario-actions">
+                <button id="scenario-summary-btn" class="generation-button" type="button">View Summary</button>
+                <button id="scenario-reset" class="generation-button" type="button">Reset Scenario</button>
+              </div>
             </div>
             <div class="context-controls">
               <label class="context-label" for="scenario-select">Select</label>
