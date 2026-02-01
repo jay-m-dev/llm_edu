@@ -61,7 +61,7 @@
 
         <section class="panel panel-stack">
           <div class="token-header">
-            <span>Tokens</span>
+            <span data-tooltip="Tokens are the small chunks the simulator processes.">Tokens</span>
             <span>Count: <span id="token-count">0</span></span>
           </div>
           <div id="failure-banner" class="failure-banner" hidden>
@@ -90,7 +90,7 @@
           </div>
           <div id="token-list" class="token-list"></div>
           <div class="token-explain-panel">
-            <div class="generation-title">Tokenization Example</div>
+            <div class="generation-title" data-tooltip="A quick visual of how text splits into tokens.">Tokenization Example</div>
             <div id="token-example" class="token-example"></div>
             <div id="token-example-list" class="token-example-list"></div>
             <div class="token-example-caption">
@@ -99,7 +99,7 @@
           </div>
 
           <div id="embedding-panel" class="embedding-panel">
-            <div id="embedding-title" class="embedding-title"></div>
+            <div id="embedding-title" class="embedding-title" data-tooltip="Embeddings summarize token features as compact values."></div>
             <div class="glossary-inline">
               <a class="glossary-link" data-glossary="embedding" href="#glossary-embedding">What is an embedding?</a>
             </div>
@@ -113,7 +113,7 @@
 
           <div id="pipeline-panel" class="pipeline-panel">
             <div class="pipeline-header">
-              <div class="pipeline-title">Pipeline Output</div>
+              <div class="pipeline-title" data-tooltip="The pipeline shows step-by-step transformations on tokens.">Pipeline Output</div>
               <select id="pipeline-stage" class="pipeline-select"></select>
             </div>
             <div id="pipeline-list" class="pipeline-list"></div>
@@ -180,7 +180,7 @@
 
           <div id="generation-panel" class="generation-panel">
           <div class="generation-header">
-              <div class="generation-title">Token-by-Token</div>
+              <div class="generation-title" data-tooltip="Step through how the output grows one token at a time.">Token-by-Token</div>
               <div class="generation-status">
                 Step: <span id="generation-step">0</span>
                 | Current: <span id="generation-current">-</span>
@@ -198,15 +198,15 @@
             <div class="inline-hint" data-hint>Step through tokens to inspect what changed.</div>
             <div id="generation-output" class="generation-output"></div>
             <div class="generation-probabilities">
-              <div class="generation-prob-title">Step Probabilities</div>
+              <div class="generation-prob-title" data-tooltip="Shows the top probabilities for the current step.">Step Probabilities</div>
               <div id="generation-prob-list" class="generation-prob-list"></div>
             </div>
             <div class="generation-attention">
-              <div class="generation-prob-title">Step Attention</div>
+              <div class="generation-prob-title" data-tooltip="Shows which tokens were most influential this step.">Step Attention</div>
               <div id="generation-attention-list" class="generation-prob-list"></div>
             </div>
             <div class="generation-heatmap" data-advanced>
-              <div class="generation-prob-title">Attention Heatmap</div>
+              <div class="generation-prob-title" data-tooltip="Heatmap shows attention strength across tokens.">Attention Heatmap</div>
               <div id="attention-heatmap" class="heatmap-grid"></div>
               <div id="attention-heatmap-labels" class="heatmap-labels"></div>
               <div class="attention-explain">
@@ -217,7 +217,7 @@
 
           <div id="replay-panel" class="generation-panel" data-advanced>
             <div class="generation-header">
-              <div class="generation-title">Replay Mode</div>
+              <div class="generation-title" data-tooltip="Replay replays a saved run without changing it.">Replay Mode</div>
               <div id="replay-status" class="generation-status">Idle</div>
             </div>
             <div class="generation-controls">
@@ -234,7 +234,7 @@
 
           <div id="objectives-panel" class="generation-panel">
             <div class="generation-header">
-              <div class="generation-title">Objectives</div>
+              <div class="generation-title" data-tooltip="Objectives check if the run meets a learning goal.">Objectives</div>
               <button id="objectives-evaluate" class="generation-button" type="button" data-tooltip="Evaluate current objectives.">Evaluate</button>
             </div>
             <div id="objectives-list" class="objectives-list"></div>
@@ -242,7 +242,7 @@
 
           <div id="diagnostics-panel" class="generation-panel" data-advanced>
             <div class="generation-header">
-              <div class="generation-title">Diagnostics</div>
+              <div class="generation-title" data-tooltip="Diagnostics flag possible failure modes.">Diagnostics</div>
               <button id="diagnostics-evaluate" class="generation-button" type="button" data-tooltip="Check for failure conditions.">Check</button>
             </div>
             <div id="diagnostics-list" class="diagnostics-list"></div>
@@ -250,7 +250,7 @@
 
           <div id="breakdown-panel" class="generation-panel">
             <div class="generation-header">
-              <div class="generation-title">Why did this happen?</div>
+              <div class="generation-title" data-tooltip="A quick explanation of the last run’s outcome.">Why did this happen?</div>
               <button id="breakdown-toggle" class="generation-button" type="button">Show</button>
             </div>
             <div id="breakdown-body" hidden>
@@ -261,7 +261,7 @@
 
           <div id="scores-panel" class="generation-panel" data-advanced>
             <div class="generation-header">
-              <div class="generation-title">Scores</div>
+              <div class="generation-title" data-tooltip="Scores summarize how the run performed.">Scores</div>
               <button id="scores-evaluate" class="generation-button" type="button" data-tooltip="Score this run across dimensions.">Score Run</button>
             </div>
             <div id="scores-list" class="scores-list"></div>
@@ -269,7 +269,7 @@
 
           <div id="saves-panel" class="generation-panel">
             <div class="generation-header">
-              <div class="generation-title">Saves</div>
+              <div class="generation-title" data-tooltip="Saved runs let you revisit outputs later.">Saves</div>
               <button id="save-run" class="generation-button" type="button">Save Run</button>
             </div>
             <div id="saves-message" class="sampling-result"></div>
@@ -278,7 +278,7 @@
 
           <div id="scenario-panel" class="generation-panel">
             <div class="generation-header">
-              <div class="generation-title">Scenario</div>
+              <div class="generation-title" data-tooltip="Scenarios are guided tasks with a goal.">Scenario</div>
               <button id="scenario-reset" class="generation-button" type="button">Reset Scenario</button>
             </div>
             <div class="context-controls">
@@ -303,7 +303,7 @@
 
           <div id="prompt-library" class="generation-panel">
             <div class="generation-header">
-              <div class="generation-title">Prompt Library</div>
+              <div class="generation-title" data-tooltip="Quick starter prompts to explore behaviors.">Prompt Library</div>
               <button id="prompt-try" class="generation-button" type="button">Try this</button>
             </div>
             <div id="prompt-list" class="prompt-list"></div>
@@ -311,7 +311,7 @@
 
           <div id="presets-panel" class="generation-panel" data-advanced>
             <div class="generation-header">
-              <div class="generation-title">Presets</div>
+              <div class="generation-title" data-tooltip="Presets store parameter combos you can reuse.">Presets</div>
               <button id="preset-save" class="generation-button" type="button">Save Preset</button>
             </div>
             <div id="presets-list" class="scores-list"></div>
@@ -319,7 +319,7 @@
 
           <div id="settings-panel" class="generation-panel">
             <div class="generation-header">
-              <div class="generation-title">Settings</div>
+              <div class="generation-title" data-tooltip="Settings adjust helper UI and playback behavior.">Settings</div>
             </div>
             <div class="context-controls">
               <label class="context-label" for="settings-hints">Hints</label>
@@ -341,7 +341,7 @@
 
           <div id="glossary-panel" class="generation-panel">
             <div class="generation-header">
-              <div class="generation-title">Glossary</div>
+              <div class="generation-title" data-tooltip="Definitions for the terms used across the UI.">Glossary</div>
             </div>
             <div class="glossary-search">
               <input id="glossary-search" class="context-input" type="search" placeholder="Search terms" />
@@ -351,7 +351,7 @@
 
           <div id="logs-panel" class="generation-panel" data-advanced>
             <div class="generation-header">
-              <div class="generation-title">Logs</div>
+              <div class="generation-title" data-tooltip="Logs record recent actions for debugging.">Logs</div>
               <button id="logs-clear" class="generation-button" type="button">Clear</button>
             </div>
             <div id="logs-list" class="scores-list"></div>
