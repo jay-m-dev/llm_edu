@@ -564,6 +564,28 @@ textarea {
   font-weight: 600;
 }
 
+.generation-token.hallucination {
+  border-color: #d07a2b;
+  background: #fff2df;
+  position: relative;
+}
+
+.generation-token.hallucination::after {
+  content: "!";
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #d07a2b;
+  color: #fff;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .objectives-list {
   display: flex;
   flex-direction: column;

@@ -100,7 +100,7 @@
           </div>
 
           <div id="generation-panel" class="generation-panel">
-            <div class="generation-header">
+          <div class="generation-header">
               <div class="generation-title">Token-by-Token</div>
               <div class="generation-status">
                 Step: <span id="generation-step">0</span>
@@ -111,6 +111,8 @@
               <button id="generation-play" class="generation-button" type="button">Play</button>
               <button id="generation-pause" class="generation-button" type="button">Pause</button>
               <button id="generation-step-btn" class="generation-button" type="button">Step</button>
+              <label class="sampling-label" for="hallucination-toggle">Hallucination flags</label>
+              <input id="hallucination-toggle" type="checkbox" checked />
             </div>
             <div id="generation-output" class="generation-output"></div>
             <div class="generation-probabilities">

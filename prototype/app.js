@@ -9,6 +9,7 @@ import { evaluateObjectives, getObjectives } from "./objectives.js";
 import { detectFailures } from "./failures.js";
 import { scoreRun } from "./scoring.js";
 import { applyUnlocks, defaultUnlocks } from "./unlocks.js";
+import { detectHallucinations } from "./hallucination.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -34,6 +35,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const generationPlayEl = document.getElementById("generation-play");
   const generationPauseEl = document.getElementById("generation-pause");
   const generationStepEl = document.getElementById("generation-step-btn");
+  const hallucinationToggleEl = document.getElementById("hallucination-toggle");
   const generationOutputEl = document.getElementById("generation-output");
   const generationStepCountEl = document.getElementById("generation-step");
   const generationCurrentEl = document.getElementById("generation-current");
@@ -85,6 +87,7 @@ window.addEventListener("DOMContentLoaded", () => {
     !generationPlayEl ||
     !generationPauseEl ||
     !generationStepEl ||
+    !hallucinationToggleEl ||
     !generationOutputEl ||
     !generationStepCountEl ||
     !generationCurrentEl ||
@@ -145,6 +148,8 @@ window.addEventListener("DOMContentLoaded", () => {
     scores: [],
     unlockState: { ...defaultUnlocks },
     sandboxMode: false,
+    hallucinationFlags: [],
+    hallucinationEnabled: true,
   };
 
   const unlockRules = {
@@ -359,6 +364,11 @@ window.addEventListener("DOMContentLoaded", () => {
     state.generatedTokens.forEach((token) => {
       const chip = document.createElement("div");
       chip.className = "generation-token";
+      const flag = state.hallucinationFlags.find((item) => item.index === token.index);
+      if (flag && state.hallucinationEnabled) {
+        chip.classList.add("hallucination");
+        chip.title = flag.reason;
+      }
       chip.textContent = token.value;
       generationOutputEl.appendChild(chip);
     });
@@ -654,6 +664,7 @@ window.addEventListener("DOMContentLoaded", () => {
     state.generatedTokens = [];
     state.generationDistributions = [];
     state.generationAttentionSteps = [];
+    state.hallucinationFlags = [];
     renderGeneration();
   }
 
@@ -663,15 +674,21 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
     const token = state.tokens[state.generationIndex];
+    const tokenWithIndex = { ...token, index: state.generationIndex };
     const distribution = buildStepDistribution(state.tokens, state.generationIndex, {
       seed: state.samplingSeed,
       temperature: state.samplingTemp,
       randomness: state.samplingRandom,
     });
     const attention = computeAttention(state.tokens, state.generationIndex);
-    state.generatedTokens.push(token);
+    state.generatedTokens.push(tokenWithIndex);
     state.generationDistributions.push(distribution);
     state.generationAttentionSteps.push(attention);
+    state.hallucinationFlags = detectHallucinations(
+      state.generatedTokens,
+      state.generationDistributions,
+      0.2
+    );
     state.generationIndex += 1;
     renderGeneration();
   }
@@ -785,6 +802,11 @@ window.addEventListener("DOMContentLoaded", () => {
     state.generatedTokens = snapshot.generatedTokens ?? [];
     state.generationDistributions = snapshot.generationDistributions ?? [];
     state.generationAttentionSteps = snapshot.generationAttentionSteps ?? [];
+    state.hallucinationFlags = detectHallucinations(
+      state.generatedTokens,
+      state.generationDistributions,
+      0.2
+    );
 
     if (state.selectedStageId) {
       pipelineStageEl.value = state.selectedStageId;
@@ -796,6 +818,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderPipeline();
     renderContextWindow();
     renderSampling();
+    renderGeneration();
   }
 
   function saveRun() {
@@ -994,6 +1017,11 @@ window.addEventListener("DOMContentLoaded", () => {
     stepGeneration();
   });
 
+  hallucinationToggleEl.addEventListener("change", () => {
+    state.hallucinationEnabled = hallucinationToggleEl.checked;
+    renderGeneration();
+  });
+
   inputEl.value = "Hello, world!\nTokenize this: A_B test.";
   contextSizeEl.value = String(state.contextSize);
   samplingSeedEl.value = String(state.samplingSeed);
@@ -1007,6 +1035,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }));
   state.diagnostics = [];
   state.scores = [];
+  hallucinationToggleEl.checked = state.hallucinationEnabled;
   const storedUnlocks = localStorage.getItem("llm-edu:unlocks");
   if (storedUnlocks) {
     try {
