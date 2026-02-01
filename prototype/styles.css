@@ -591,6 +591,12 @@ textarea {
   padding-top: 12px;
 }
 
+.sampling-explain {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
 .sampling-header {
   display: flex;
   align-items: center;
