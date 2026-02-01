@@ -213,6 +213,14 @@ label {
   margin-bottom: 8px;
 }
 
+.label-sub {
+  display: block;
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
 textarea {
   width: 100%;
   min-height: 200px;

@@ -78,8 +78,9 @@
           <div id="unlock-toast" class="unlock-toast" hidden></div>
           <div class="context-controls">
             <label class="context-label" for="context-size" data-tooltip="Controls how many recent tokens remain visible.">
-              Context size
+              Memory size
               <span id="lock-context-size" class="lock-badge">Locked</span>
+              <span class="label-sub">How many recent tokens stay in view</span>
             </label>
             <div class="slider-row">
               <input id="context-size" class="context-input" type="number" min="0" max="200" value="12" />
@@ -145,11 +146,15 @@
               Temperature spreads or tightens choices, while randomness adds surprise. Example: low randomness yields steady picks, high randomness introduces unexpected tokens.
             </div>
             <div class="sampling-controls">
-              <label class="sampling-label" for="sampling-seed" data-tooltip="Seed fixes randomness so runs are repeatable.">Seed</label>
+              <label class="sampling-label" for="sampling-seed" data-tooltip="Seed fixes randomness so runs are repeatable.">
+                Repeatable run
+                <span class="label-sub">Use the same seed to get the same output</span>
+              </label>
               <input id="sampling-seed" class="sampling-input" type="number" value="12345" />
               <label class="sampling-label" for="sampling-temp" data-tooltip="Temperature reshapes probability spread.">
-                Temperature
+                Risk level
                 <span id="lock-sampling-temp" class="lock-badge">Locked</span>
+                <span class="label-sub">Lower is safer, higher is wilder</span>
               </label>
               <div class="slider-row">
                 <input id="sampling-temp" class="sampling-input" type="number" step="0.1" min="0.1" value="1" />
@@ -158,8 +163,9 @@
               </div>
               <div class="inline-hint" data-hint>Lower temperature makes output steadier.</div>
               <label class="sampling-label" for="sampling-random" data-tooltip="Randomness adds noise to token choice.">
-                Randomness
+                Surprise
                 <span id="lock-sampling-random" class="lock-badge">Locked</span>
+                <span class="label-sub">Adds extra noise to choices</span>
               </label>
               <div class="slider-row">
                 <input id="sampling-random" class="sampling-input" type="number" step="0.05" min="0" max="1" value="0.2" />
@@ -192,7 +198,10 @@
               <button id="generation-step-btn" class="generation-button" type="button" data-tooltip="Advance by one token.">Step</button>
               <button id="run-reset" class="generation-button" type="button" data-tooltip="Reset the current run.">Reset</button>
               <button id="run-undo" class="generation-button" type="button" data-tooltip="Restore the previous run snapshot.">Undo</button>
-              <label class="sampling-label" for="generation-speed">Speed</label>
+              <label class="sampling-label" for="generation-speed">
+                Playback speed
+                <span class="label-sub">How fast tokens appear</span>
+              </label>
               <input id="generation-speed" class="sampling-input" type="number" step="0.1" min="0.2" value="1" />
               <label class="sampling-label" for="hallucination-toggle" data-tooltip="Flags low-probability tokens as risky guesses.">Hallucination flags</label>
               <input id="hallucination-toggle" type="checkbox" checked />
@@ -226,7 +235,10 @@
               <button id="replay-play" class="generation-button" type="button" data-tooltip="Play the replay timeline.">Play</button>
               <button id="replay-pause" class="generation-button" type="button" data-tooltip="Pause replay.">Pause</button>
               <button id="replay-step" class="generation-button" type="button" data-tooltip="Step through replay.">Step</button>
-              <label class="sampling-label" for="replay-speed" data-tooltip="Replay speed controls playback rate.">Speed</label>
+              <label class="sampling-label" for="replay-speed" data-tooltip="Replay speed controls playback rate.">
+                Replay speed
+                <span class="label-sub">Faster or slower playback</span>
+              </label>
               <input id="replay-speed" class="sampling-input" type="number" step="0.1" min="0.2" value="1" />
               <button id="replay-exit" class="generation-button" type="button" data-tooltip="Exit replay mode.">Exit Replay</button>
             </div>
