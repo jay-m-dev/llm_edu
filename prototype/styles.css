@@ -831,6 +831,10 @@ textarea {
   z-index: 50;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .onboarding-modal {
   background: #fff;
   border-radius: 12px;

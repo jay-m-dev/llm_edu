@@ -798,16 +798,21 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function setOnboardingVisible(isVisible) {
+    onboardingEl.hidden = !isVisible;
+    onboardingEl.style.display = isVisible ? "flex" : "none";
+  }
+
   function renderOnboarding() {
     const step = onboardingSteps[state.onboardingStep] || onboardingSteps[0];
     onboardingStepEl.textContent = step.title;
     onboardingBodyEl.textContent = step.body;
-    onboardingEl.hidden = false;
+    setOnboardingVisible(true);
   }
 
   function completeOnboarding() {
     localStorage.setItem("llm-edu:onboarding", "done");
-    onboardingEl.hidden = true;
+    setOnboardingVisible(false);
     state.scenarioId = "intro";
     scenarioSelectEl.value = "intro";
     const scenario = findScenario("intro");
@@ -1751,6 +1756,8 @@ window.addEventListener("DOMContentLoaded", () => {
   if (!onboardingDone) {
     state.onboardingStep = 0;
     renderOnboarding();
+  } else {
+    setOnboardingVisible(false);
   }
   hallucinationToggleEl.checked = state.hallucinationEnabled;
   renderExplanation();
