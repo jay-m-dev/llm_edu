@@ -16,8 +16,9 @@ export const scenarios = [
     intro: "Use a longer prompt to exceed the context window and watch earlier tokens drop off.",
     objectiveId: "context-safe",
     failureHint: "Increase context size or shorten the prompt to pass.",
-    params: { contextSize: 8, samplingTemp: 1, samplingRandom: 0.1 },
-    prompt: "Repeat this sentence to overflow the window.",
+    params: { contextSize: 8, samplingTemp: 1, samplingRandom: 0.1, samplingSeed: 4242 },
+    prompt:
+      "Repeat this sentence to overflow the window. Repeat this sentence to overflow the window. Repeat this sentence to overflow the window.",
   },
   {
     id: "sampling-shift",

@@ -1250,6 +1250,9 @@ window.addEventListener("DOMContentLoaded", () => {
       state.contextSize = scenario.params.contextSize;
       state.samplingTemp = scenario.params.samplingTemp;
       state.samplingRandom = scenario.params.samplingRandom;
+      if (Number.isFinite(scenario.params.samplingSeed)) {
+        state.samplingSeed = scenario.params.samplingSeed;
+      }
     }
     persistScenario();
     renderScenario();
@@ -1264,6 +1267,9 @@ window.addEventListener("DOMContentLoaded", () => {
       state.contextSize = scenario.params.contextSize;
       state.samplingTemp = scenario.params.samplingTemp;
       state.samplingRandom = scenario.params.samplingRandom;
+      if (Number.isFinite(scenario.params.samplingSeed)) {
+        state.samplingSeed = scenario.params.samplingSeed;
+      }
     }
     persistScenario();
     renderScenario();
@@ -1436,6 +1442,9 @@ window.addEventListener("DOMContentLoaded", () => {
     state.contextSize = scenario.params.contextSize;
     state.samplingTemp = scenario.params.samplingTemp;
     state.samplingRandom = scenario.params.samplingRandom;
+    if (Number.isFinite(scenario.params.samplingSeed)) {
+      state.samplingSeed = scenario.params.samplingSeed;
+    }
   }
   renderScenario();
   const storedPresets = localStorage.getItem("llm-edu:presets");
