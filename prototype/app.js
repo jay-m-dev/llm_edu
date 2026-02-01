@@ -10,6 +10,7 @@ import { detectFailures } from "./failures.js";
 import { scoreRun } from "./scoring.js";
 import { applyUnlocks, defaultUnlocks } from "./unlocks.js";
 import { detectHallucinations } from "./hallucination.js";
+import { explanations } from "./explanations.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -49,6 +50,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const generationAttentionListEl = document.getElementById("generation-attention-list");
   const attentionHeatmapEl = document.getElementById("attention-heatmap");
   const attentionHeatmapLabelsEl = document.getElementById("attention-heatmap-labels");
+  const explainPanelEl = document.getElementById("explain-panel");
+  const explainToggleEl = document.getElementById("explain-toggle");
+  const explainContentEl = document.getElementById("explain-content");
   const replayStatusEl = document.getElementById("replay-status");
   const replayPlayEl = document.getElementById("replay-play");
   const replayPauseEl = document.getElementById("replay-pause");
@@ -107,6 +111,9 @@ window.addEventListener("DOMContentLoaded", () => {
     !generationAttentionListEl ||
     !attentionHeatmapEl ||
     !attentionHeatmapLabelsEl ||
+    !explainPanelEl ||
+    !explainToggleEl ||
+    !explainContentEl ||
     !replayStatusEl ||
     !replayPlayEl ||
     !replayPauseEl ||
@@ -162,6 +169,8 @@ window.addEventListener("DOMContentLoaded", () => {
     sandboxMode: false,
     hallucinationFlags: [],
     hallucinationEnabled: true,
+    explainKey: "tokens",
+    explainVisible: true,
   };
 
   const unlockRules = {
@@ -463,6 +472,12 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function renderExplanation() {
+    const text = explanations[state.explainKey] || explanations.tokens;
+    explainContentEl.textContent = text;
+    explainPanelEl.classList.toggle("hidden", !state.explainVisible);
+    explainToggleEl.textContent = state.explainVisible ? "Hide" : "Show";
+  }
   function renderReplay() {
     replayOutputEl.innerHTML = "";
     if (!state.replaySnapshot) {
@@ -777,6 +792,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderObjectives();
     renderDiagnostics();
     renderScores();
+    renderExplanation();
   }
 
   function buildRunSnapshot() {
@@ -896,6 +912,8 @@ window.addEventListener("DOMContentLoaded", () => {
     renderTokens(state.tokens);
     renderEmbedding();
     renderAttention();
+    state.explainKey = "tokens";
+    renderExplanation();
   });
 
   inputEl.addEventListener("input", update);
@@ -914,6 +932,8 @@ window.addEventListener("DOMContentLoaded", () => {
   pipelineStageEl.addEventListener("change", () => {
     state.selectedStageId = pipelineStageEl.value;
     renderPipeline();
+    state.explainKey = "pipeline";
+    renderExplanation();
   });
 
   contextSizeEl.addEventListener("input", () => {
@@ -923,6 +943,8 @@ window.addEventListener("DOMContentLoaded", () => {
     contextSizeValueEl.textContent = String(state.contextSize);
     persistParams();
     update();
+    state.explainKey = "context";
+    renderExplanation();
   });
 
   contextSizeSliderEl.addEventListener("input", () => {
@@ -932,6 +954,8 @@ window.addEventListener("DOMContentLoaded", () => {
     contextSizeValueEl.textContent = String(state.contextSize);
     persistParams();
     update();
+    state.explainKey = "context";
+    renderExplanation();
   });
 
   samplingSeedEl.addEventListener("input", () => {
@@ -949,6 +973,8 @@ window.addEventListener("DOMContentLoaded", () => {
     persistParams();
     updateSamplingDistribution();
     renderSampling();
+    state.explainKey = "sampling";
+    renderExplanation();
   });
 
   samplingTempSliderEl.addEventListener("input", () => {
@@ -959,6 +985,8 @@ window.addEventListener("DOMContentLoaded", () => {
     persistParams();
     updateSamplingDistribution();
     renderSampling();
+    state.explainKey = "sampling";
+    renderExplanation();
   });
 
   samplingRandomEl.addEventListener("input", () => {
@@ -969,6 +997,8 @@ window.addEventListener("DOMContentLoaded", () => {
     persistParams();
     updateSamplingDistribution();
     renderSampling();
+    state.explainKey = "sampling";
+    renderExplanation();
   });
 
   samplingRandomSliderEl.addEventListener("input", () => {
@@ -979,6 +1009,8 @@ window.addEventListener("DOMContentLoaded", () => {
     persistParams();
     updateSamplingDistribution();
     renderSampling();
+    state.explainKey = "sampling";
+    renderExplanation();
   });
 
   samplingRunEl.addEventListener("click", () => {
@@ -1000,6 +1032,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
   runReplayEl.addEventListener("click", () => {
     replayRun();
+    state.explainKey = "replay";
+    renderExplanation();
   });
 
   objectivesEvaluateEl.addEventListener("click", () => {
@@ -1007,6 +1041,8 @@ window.addEventListener("DOMContentLoaded", () => {
     state.objectives = evaluateObjectives(snapshot);
     renderObjectives();
     applyUnlockResults(state.objectives);
+    state.explainKey = "objectives";
+    renderExplanation();
   });
 
   diagnosticsEvaluateEl.addEventListener("click", () => {
@@ -1086,6 +1122,18 @@ window.addEventListener("DOMContentLoaded", () => {
     renderGeneration();
   });
 
+  explainToggleEl.addEventListener("click", () => {
+    state.explainVisible = !state.explainVisible;
+    renderExplanation();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key.toLowerCase() === "e") {
+      state.explainVisible = !state.explainVisible;
+      renderExplanation();
+    }
+  });
+
   const storedParams = localStorage.getItem("llm-edu:params");
   if (storedParams) {
     try {
@@ -1124,6 +1172,7 @@ window.addEventListener("DOMContentLoaded", () => {
   state.diagnostics = [];
   state.scores = [];
   hallucinationToggleEl.checked = state.hallucinationEnabled;
+  renderExplanation();
   const storedUnlocks = localStorage.getItem("llm-edu:unlocks");
   if (storedUnlocks) {
     try {
