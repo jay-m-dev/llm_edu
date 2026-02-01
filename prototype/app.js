@@ -11,6 +11,7 @@ import { scoreRun } from "./scoring.js";
 import { applyUnlocks, defaultUnlocks } from "./unlocks.js";
 import { detectHallucinations } from "./hallucination.js";
 import { explanations } from "./explanations.js";
+import { findScenario, scenarios } from "./scenario.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -69,6 +70,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const savesListEl = document.getElementById("saves-list");
   const saveRunEl = document.getElementById("save-run");
   const savesMessageEl = document.getElementById("saves-message");
+  const scenarioSelectEl = document.getElementById("scenario-select");
+  const scenarioResetEl = document.getElementById("scenario-reset");
+  const scenarioSummaryEl = document.getElementById("scenario-summary");
   const unlockToastEl = document.getElementById("unlock-toast");
   const failureBannerEl = document.getElementById("failure-banner");
   const failureTitleEl = document.querySelector(".failure-title");
@@ -138,6 +142,9 @@ window.addEventListener("DOMContentLoaded", () => {
     !savesListEl ||
     !saveRunEl ||
     !savesMessageEl ||
+    !scenarioSelectEl ||
+    !scenarioResetEl ||
+    !scenarioSummaryEl ||
     !unlockToastEl ||
     !failureBannerEl ||
     !failureTitleEl ||
@@ -188,6 +195,7 @@ window.addEventListener("DOMContentLoaded", () => {
     explainKey: "tokens",
     explainVisible: true,
     saves: [],
+    scenarioId: scenarios[0].id,
   };
 
   const unlockRules = {
@@ -673,6 +681,11 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function renderScenario() {
+    const scenario = findScenario(state.scenarioId);
+    scenarioSummaryEl.textContent = scenario.summary;
+  }
+
   function showUnlockToast(message) {
     if (unlockToastTimer) {
       clearTimeout(unlockToastTimer);
@@ -974,6 +987,10 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function persistScenario() {
+    localStorage.setItem("llm-edu:scenario", JSON.stringify({ id: state.scenarioId }));
+  }
+
   function replayRun() {
     const raw = localStorage.getItem("llm-edu:lastRun");
     if (!raw) {
@@ -1155,6 +1172,24 @@ window.addEventListener("DOMContentLoaded", () => {
     renderScores();
   });
 
+  scenarioSelectEl.addEventListener("change", () => {
+    state.scenarioId = scenarioSelectEl.value;
+    const scenario = findScenario(state.scenarioId);
+    inputEl.value = scenario.prompt;
+    persistScenario();
+    renderScenario();
+    update();
+  });
+
+  scenarioResetEl.addEventListener("click", () => {
+    state.scenarioId = scenarios[0].id;
+    const scenario = findScenario(state.scenarioId);
+    inputEl.value = scenario.prompt;
+    persistScenario();
+    renderScenario();
+    update();
+  });
+
   saveRunEl.addEventListener("click", () => {
     saveRunToList();
   });
@@ -1280,6 +1315,28 @@ window.addEventListener("DOMContentLoaded", () => {
   }));
   state.diagnostics = [];
   state.scores = [];
+  scenarioSelectEl.innerHTML = "";
+  scenarios.forEach((scenario) => {
+    const option = document.createElement("option");
+    option.value = scenario.id;
+    option.textContent = scenario.name;
+    scenarioSelectEl.appendChild(option);
+  });
+  const storedScenario = localStorage.getItem("llm-edu:scenario");
+  if (storedScenario) {
+    try {
+      const parsed = JSON.parse(storedScenario);
+      if (parsed?.id) {
+        state.scenarioId = parsed.id;
+      }
+    } catch (err) {
+      // Ignore malformed stored scenario.
+    }
+  }
+  scenarioSelectEl.value = state.scenarioId;
+  const scenario = findScenario(state.scenarioId);
+  inputEl.value = scenario.prompt;
+  renderScenario();
   loadSaves();
   hallucinationToggleEl.checked = state.hallucinationEnabled;
   renderExplanation();

@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node prototype/tokenizer.test.js && node prototype/embedding.test.js && node prototype/attention.test.js && node prototype/pipeline.test.js && node prototype/context_window.test.js && node prototype/sampling.test.js && node prototype/generation_probabilities.test.js && node prototype/objectives.test.js && node prototype/failures.test.js && node prototype/scoring.test.js && node prototype/unlocks.test.js && node prototype/hallucination.test.js"
+    "test": "node prototype/tokenizer.test.js && node prototype/embedding.test.js && node prototype/attention.test.js && node prototype/pipeline.test.js && node prototype/context_window.test.js && node prototype/sampling.test.js && node prototype/generation_probabilities.test.js && node prototype/objectives.test.js && node prototype/failures.test.js && node prototype/scoring.test.js && node prototype/unlocks.test.js && node prototype/hallucination.test.js && node prototype/scenario.test.js"
   }
 }
