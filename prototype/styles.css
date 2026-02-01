@@ -508,6 +508,13 @@ textarea {
   color: var(--muted);
 }
 
+.inline-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
 .sampling-list {
   display: flex;
   flex-direction: column;

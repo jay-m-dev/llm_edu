@@ -924,6 +924,9 @@ window.addEventListener("DOMContentLoaded", () => {
     if (state.generationClock) {
       state.generationClock.setSpeed(state.generationSpeed);
     }
+    document.querySelectorAll("[data-hint]").forEach((element) => {
+      element.style.display = state.settings.hints ? "block" : "none";
+    });
   }
 
   function persistSettings() {

@@ -65,6 +65,7 @@
               <input id="context-size-slider" class="slider-input" type="range" min="0" max="200" value="12" />
               <span id="context-size-value" class="slider-value">12</span>
             </div>
+            <div class="inline-hint" data-hint>Higher values keep more tokens in memory.</div>
           </div>
           <div id="token-list" class="token-list"></div>
 
@@ -117,6 +118,7 @@
                 <input id="sampling-temp-slider" class="slider-input" type="range" step="0.1" min="0.1" max="2" value="1" />
                 <span id="sampling-temp-value" class="slider-value">1.0</span>
               </div>
+              <div class="inline-hint" data-hint>Lower temperature makes output steadier.</div>
               <label class="sampling-label" for="sampling-random" data-tooltip="Randomness adds noise to token choice.">
                 Randomness
                 <span id="lock-sampling-random" class="lock-badge">Locked</span>
@@ -126,6 +128,7 @@
                 <input id="sampling-random-slider" class="slider-input" type="range" step="0.05" min="0" max="1" value="0.2" />
                 <span id="sampling-random-value" class="slider-value">0.20</span>
               </div>
+              <div class="inline-hint" data-hint>Higher randomness increases surprise and drift.</div>
               <button id="sampling-run" class="sampling-button" type="button" data-tooltip="Run a single sampling draw.">Sample</button>
             </div>
             <div class="sampling-actions">
@@ -134,6 +137,7 @@
             </div>
             <div id="sampling-result" class="sampling-result">No sample yet.</div>
             <div id="sampling-list" class="sampling-list"></div>
+            <div class="inline-hint" data-hint>Record a run before replaying it.</div>
           </div>
 
           <div id="generation-panel" class="generation-panel">
@@ -153,6 +157,7 @@
               <label class="sampling-label" for="hallucination-toggle" data-tooltip="Flags low-probability tokens as risky guesses.">Hallucination flags</label>
               <input id="hallucination-toggle" type="checkbox" checked />
             </div>
+            <div class="inline-hint" data-hint>Step through tokens to inspect what changed.</div>
             <div id="generation-output" class="generation-output"></div>
             <div class="generation-probabilities">
               <div class="generation-prob-title">Step Probabilities</div>
@@ -182,6 +187,7 @@
               <input id="replay-speed" class="sampling-input" type="number" step="0.1" min="0.2" value="1" />
               <button id="replay-exit" class="generation-button" type="button" data-tooltip="Exit replay mode.">Exit Replay</button>
             </div>
+            <div class="inline-hint" data-hint>Replay shows a saved run without changing it.</div>
             <div class="generation-output" id="replay-output"></div>
           </div>
 
@@ -227,6 +233,7 @@
               <label class="context-label" for="scenario-select">Select</label>
               <select id="scenario-select" class="context-input"></select>
             </div>
+            <div class="inline-hint" data-hint>Scenarios are guided tasks that teach one concept.</div>
             <div id="scenario-toggle" class="context-controls" hidden>
               <label class="context-label" for="prompt-toggle">Prompt A/B</label>
               <button id="prompt-toggle" class="generation-button" type="button">Use B</button>
