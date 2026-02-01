@@ -78,6 +78,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const onboardingBodyEl = document.getElementById("onboarding-body");
   const onboardingSkipEl = document.getElementById("onboarding-skip");
   const onboardingNextEl = document.getElementById("onboarding-next");
+  const errorScreenEl = document.getElementById("error-screen");
+  const errorMessageEl = document.getElementById("error-message");
+  const errorResetEl = document.getElementById("error-reset");
   const scenarioSelectEl = document.getElementById("scenario-select");
   const scenarioResetEl = document.getElementById("scenario-reset");
   const scenarioToggleEl = document.getElementById("scenario-toggle");
@@ -166,6 +169,9 @@ window.addEventListener("DOMContentLoaded", () => {
     !onboardingBodyEl ||
     !onboardingSkipEl ||
     !onboardingNextEl ||
+    !errorScreenEl ||
+    !errorMessageEl ||
+    !errorResetEl ||
     !scenarioSelectEl ||
     !scenarioResetEl ||
     !scenarioToggleEl ||
@@ -263,6 +269,20 @@ window.addEventListener("DOMContentLoaded", () => {
       body: "Change parameters to make the run more stable or more playful.",
     },
   ];
+
+  function showErrorScreen(message) {
+    console.error("App error:", message);
+    errorMessageEl.textContent = message;
+    errorScreenEl.hidden = false;
+  }
+
+  window.addEventListener("error", (event) => {
+    showErrorScreen(event.message || "Unexpected error.");
+  });
+
+  window.addEventListener("unhandledrejection", (event) => {
+    showErrorScreen(event.reason?.message || "Unexpected error.");
+  });
 
   const unlockRules = {
     "context-safe": "context-size",
@@ -1014,6 +1034,7 @@ window.addEventListener("DOMContentLoaded", () => {
     try {
       tokens = tokenize(input);
     } catch (err) {
+      console.error("Tokenization error:", err);
       tokenListEl.innerHTML = "";
       countEl.textContent = "0";
       const row = document.createElement("div");
@@ -1413,6 +1434,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
   onboardingSkipEl.addEventListener("click", () => {
     completeOnboarding();
+  });
+
+  errorResetEl.addEventListener("click", () => {
+    errorScreenEl.hidden = true;
+    update();
   });
 
   promptToggleEl.addEventListener("click", () => {

@@ -8,6 +8,15 @@
   </head>
   <body>
     <div class="container">
+      <div id="error-screen" class="onboarding-overlay" hidden>
+        <div class="onboarding-modal">
+          <div class="generation-title">Something went wrong</div>
+          <div id="error-message" class="sampling-result"></div>
+          <div class="onboarding-actions">
+            <button id="error-reset" class="generation-button" type="button">Reset</button>
+          </div>
+        </div>
+      </div>
       <div id="onboarding" class="onboarding-overlay" hidden>
         <div class="onboarding-modal">
           <div id="onboarding-step" class="generation-title"></div>
