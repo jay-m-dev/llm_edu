@@ -85,6 +85,12 @@ window.addEventListener("DOMContentLoaded", () => {
   const errorScreenEl = document.getElementById("error-screen");
   const errorMessageEl = document.getElementById("error-message");
   const errorResetEl = document.getElementById("error-reset");
+  const failureOverlayEl = document.getElementById("failure-overlay");
+  const failureOverlayTitleEl = document.getElementById("failure-overlay-title");
+  const failureOverlayCauseEl = document.getElementById("failure-overlay-cause");
+  const failureOverlayHintEl = document.getElementById("failure-overlay-hint");
+  const failureOverlayDismissEl = document.getElementById("failure-overlay-dismiss");
+  const failureOverlayRetryEl = document.getElementById("failure-overlay-retry");
   const scenarioSelectEl = document.getElementById("scenario-select");
   const scenarioResetEl = document.getElementById("scenario-reset");
   const scenarioToggleEl = document.getElementById("scenario-toggle");
@@ -188,6 +194,12 @@ window.addEventListener("DOMContentLoaded", () => {
     !errorScreenEl ||
     !errorMessageEl ||
     !errorResetEl ||
+    !failureOverlayEl ||
+    !failureOverlayTitleEl ||
+    !failureOverlayCauseEl ||
+    !failureOverlayHintEl ||
+    !failureOverlayDismissEl ||
+    !failureOverlayRetryEl ||
     !scenarioSelectEl ||
     !scenarioResetEl ||
     !scenarioToggleEl ||
@@ -277,6 +289,8 @@ window.addEventListener("DOMContentLoaded", () => {
     tutorialInspected: false,
     tutorialAdjusted: false,
     tutorialComplete: false,
+    failureOverlayDismissed: false,
+    failureSignature: null,
     settings: {
       hints: true,
       animSpeed: 1,
@@ -329,6 +343,19 @@ window.addEventListener("DOMContentLoaded", () => {
     console.error("App error:", message);
     errorMessageEl.textContent = message;
     errorScreenEl.hidden = false;
+  }
+
+  function dismissFailureOverlay() {
+    state.failureOverlayDismissed = true;
+    failureOverlayEl.hidden = true;
+  }
+
+  function handleFailureRetry() {
+    dismissFailureOverlay();
+    resetGeneration();
+    state.diagnostics = [];
+    renderDiagnostics();
+    renderFailureBanner();
   }
 
   window.addEventListener("error", (event) => {
@@ -806,6 +833,9 @@ window.addEventListener("DOMContentLoaded", () => {
   function renderFailureBanner() {
     if (state.diagnostics.length === 0 && !state.limitsHit) {
       failureBannerEl.hidden = true;
+      failureOverlayEl.hidden = true;
+      state.failureSignature = null;
+      state.failureOverlayDismissed = false;
       return;
     }
     if (state.limitsHit) {
@@ -813,6 +843,17 @@ window.addEventListener("DOMContentLoaded", () => {
       failureCauseEl.textContent = "Cause: token or step limit reached.";
       failureHintEl.textContent = "Try a shorter prompt or fewer steps.";
       failureBannerEl.hidden = false;
+      const signature = "limits";
+      if (state.failureSignature !== signature) {
+        state.failureSignature = signature;
+        state.failureOverlayDismissed = false;
+      }
+      if (!state.failureOverlayDismissed) {
+        failureOverlayTitleEl.textContent = "Run capped for performance";
+        failureOverlayCauseEl.textContent = "Cause: token or step limit reached.";
+        failureOverlayHintEl.textContent = "Hint: Try a shorter prompt or fewer steps.";
+        failureOverlayEl.hidden = false;
+      }
       return;
     }
     const primary = state.diagnostics[0];
@@ -820,6 +861,17 @@ window.addEventListener("DOMContentLoaded", () => {
     failureCauseEl.textContent = `Cause: ${primary.cause}`;
     failureHintEl.textContent = `Try: ${primary.hint}`;
     failureBannerEl.hidden = false;
+    const signature = primary.id;
+    if (state.failureSignature !== signature) {
+      state.failureSignature = signature;
+      state.failureOverlayDismissed = false;
+    }
+    if (!state.failureOverlayDismissed) {
+      failureOverlayTitleEl.textContent = "Run hit a snag";
+      failureOverlayCauseEl.textContent = `Cause: ${primary.cause}`;
+      failureOverlayHintEl.textContent = `Hint: ${primary.hint}`;
+      failureOverlayEl.hidden = false;
+    }
   }
 
   function renderScores() {
@@ -1810,6 +1862,14 @@ window.addEventListener("DOMContentLoaded", () => {
     update();
   });
 
+  failureOverlayDismissEl.addEventListener("click", () => {
+    dismissFailureOverlay();
+  });
+
+  failureOverlayRetryEl.addEventListener("click", () => {
+    handleFailureRetry();
+  });
+
   promptToggleEl.addEventListener("click", () => {
     const scenario = findScenario(state.scenarioId);
     if (!scenario.promptAlt) {
@@ -1950,10 +2010,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   failureRetryEl.addEventListener("click", () => {
-    resetGeneration();
-    state.diagnostics = [];
-    renderDiagnostics();
-    renderFailureBanner();
+    handleFailureRetry();
   });
 
   generationPlayEl.addEventListener("click", () => {
