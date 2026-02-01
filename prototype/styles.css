@@ -799,3 +799,32 @@ textarea {
 .explain-panel.hidden {
   display: none;
 }
+
+.tooltip-target {
+  position: relative;
+  outline: none;
+}
+
+.tooltip-target::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  background: #1f1f1f;
+  color: #fff;
+  font-size: 11px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 120ms ease, transform 120ms ease;
+  z-index: 5;
+}
+
+.tooltip-target:focus::after,
+.tooltip-target:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}

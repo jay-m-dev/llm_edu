@@ -26,12 +26,12 @@
           </div>
           <div class="sandbox-banner" id="sandbox-banner" hidden>Sandbox mode: objectives and scoring disabled.</div>
           <div class="sandbox-toggle">
-            <label class="context-label" for="sandbox-mode">Sandbox mode</label>
+            <label class="context-label" for="sandbox-mode" data-tooltip="Enable free play with all controls unlocked.">Sandbox mode</label>
             <input id="sandbox-mode" type="checkbox" />
           </div>
           <div id="unlock-toast" class="unlock-toast" hidden></div>
           <div class="context-controls">
-            <label class="context-label" for="context-size">
+            <label class="context-label" for="context-size" data-tooltip="Controls how many recent tokens remain visible.">
               Context size
               <span id="lock-context-size" class="lock-badge">Locked</span>
             </label>
@@ -81,9 +81,9 @@
               <div id="replay-indicator" class="replay-indicator">Replay: off</div>
             </div>
             <div class="sampling-controls">
-              <label class="sampling-label" for="sampling-seed">Seed</label>
+              <label class="sampling-label" for="sampling-seed" data-tooltip="Seed fixes randomness so runs are repeatable.">Seed</label>
               <input id="sampling-seed" class="sampling-input" type="number" value="12345" />
-              <label class="sampling-label" for="sampling-temp">
+              <label class="sampling-label" for="sampling-temp" data-tooltip="Temperature reshapes probability spread.">
                 Temperature
                 <span id="lock-sampling-temp" class="lock-badge">Locked</span>
               </label>
@@ -92,7 +92,7 @@
                 <input id="sampling-temp-slider" class="slider-input" type="range" step="0.1" min="0.1" max="2" value="1" />
                 <span id="sampling-temp-value" class="slider-value">1.0</span>
               </div>
-              <label class="sampling-label" for="sampling-random">
+              <label class="sampling-label" for="sampling-random" data-tooltip="Randomness adds noise to token choice.">
                 Randomness
                 <span id="lock-sampling-random" class="lock-badge">Locked</span>
               </label>
@@ -101,11 +101,11 @@
                 <input id="sampling-random-slider" class="slider-input" type="range" step="0.05" min="0" max="1" value="0.2" />
                 <span id="sampling-random-value" class="slider-value">0.20</span>
               </div>
-              <button id="sampling-run" class="sampling-button" type="button">Sample</button>
+              <button id="sampling-run" class="sampling-button" type="button" data-tooltip="Run a single sampling draw.">Sample</button>
             </div>
             <div class="sampling-actions">
-              <button id="run-save" class="sampling-button" type="button">Record Run</button>
-              <button id="run-replay" class="sampling-button" type="button">Replay Last</button>
+              <button id="run-save" class="sampling-button" type="button" data-tooltip="Save the current run for replay.">Record Run</button>
+              <button id="run-replay" class="sampling-button" type="button" data-tooltip="Load the last saved run into replay.">Replay Last</button>
             </div>
             <div id="sampling-result" class="sampling-result">No sample yet.</div>
             <div id="sampling-list" class="sampling-list"></div>
@@ -120,10 +120,10 @@
               </div>
             </div>
             <div class="generation-controls">
-              <button id="generation-play" class="generation-button" type="button">Play</button>
-              <button id="generation-pause" class="generation-button" type="button">Pause</button>
-              <button id="generation-step-btn" class="generation-button" type="button">Step</button>
-              <label class="sampling-label" for="hallucination-toggle">Hallucination flags</label>
+              <button id="generation-play" class="generation-button" type="button" data-tooltip="Play token generation automatically.">Play</button>
+              <button id="generation-pause" class="generation-button" type="button" data-tooltip="Pause token generation.">Pause</button>
+              <button id="generation-step-btn" class="generation-button" type="button" data-tooltip="Advance by one token.">Step</button>
+              <label class="sampling-label" for="hallucination-toggle" data-tooltip="Flags low-probability tokens as risky guesses.">Hallucination flags</label>
               <input id="hallucination-toggle" type="checkbox" checked />
             </div>
             <div id="generation-output" class="generation-output"></div>
@@ -148,12 +148,12 @@
               <div id="replay-status" class="generation-status">Idle</div>
             </div>
             <div class="generation-controls">
-              <button id="replay-play" class="generation-button" type="button">Play</button>
-              <button id="replay-pause" class="generation-button" type="button">Pause</button>
-              <button id="replay-step" class="generation-button" type="button">Step</button>
-              <label class="sampling-label" for="replay-speed">Speed</label>
+              <button id="replay-play" class="generation-button" type="button" data-tooltip="Play the replay timeline.">Play</button>
+              <button id="replay-pause" class="generation-button" type="button" data-tooltip="Pause replay.">Pause</button>
+              <button id="replay-step" class="generation-button" type="button" data-tooltip="Step through replay.">Step</button>
+              <label class="sampling-label" for="replay-speed" data-tooltip="Replay speed controls playback rate.">Speed</label>
               <input id="replay-speed" class="sampling-input" type="number" step="0.1" min="0.2" value="1" />
-              <button id="replay-exit" class="generation-button" type="button">Exit Replay</button>
+              <button id="replay-exit" class="generation-button" type="button" data-tooltip="Exit replay mode.">Exit Replay</button>
             </div>
             <div class="generation-output" id="replay-output"></div>
           </div>
@@ -161,7 +161,7 @@
           <div id="objectives-panel" class="generation-panel">
             <div class="generation-header">
               <div class="generation-title">Objectives</div>
-              <button id="objectives-evaluate" class="generation-button" type="button">Evaluate</button>
+              <button id="objectives-evaluate" class="generation-button" type="button" data-tooltip="Evaluate current objectives.">Evaluate</button>
             </div>
             <div id="objectives-list" class="objectives-list"></div>
           </div>
@@ -169,7 +169,7 @@
           <div id="diagnostics-panel" class="generation-panel">
             <div class="generation-header">
               <div class="generation-title">Diagnostics</div>
-              <button id="diagnostics-evaluate" class="generation-button" type="button">Check</button>
+              <button id="diagnostics-evaluate" class="generation-button" type="button" data-tooltip="Check for failure conditions.">Check</button>
             </div>
             <div id="diagnostics-list" class="diagnostics-list"></div>
           </div>
@@ -177,7 +177,7 @@
           <div id="scores-panel" class="generation-panel">
             <div class="generation-header">
               <div class="generation-title">Scores</div>
-              <button id="scores-evaluate" class="generation-button" type="button">Score Run</button>
+              <button id="scores-evaluate" class="generation-button" type="button" data-tooltip="Score this run across dimensions.">Score Run</button>
             </div>
             <div id="scores-list" class="scores-list"></div>
           </div>

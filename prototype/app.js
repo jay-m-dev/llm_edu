@@ -1173,6 +1173,13 @@ window.addEventListener("DOMContentLoaded", () => {
   state.scores = [];
   hallucinationToggleEl.checked = state.hallucinationEnabled;
   renderExplanation();
+
+  document.querySelectorAll("[data-tooltip]").forEach((element) => {
+    element.classList.add("tooltip-target");
+    if (!element.hasAttribute("tabindex")) {
+      element.setAttribute("tabindex", "0");
+    }
+  });
   const storedUnlocks = localStorage.getItem("llm-edu:unlocks");
   if (storedUnlocks) {
     try {
