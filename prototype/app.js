@@ -21,6 +21,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
   const tokenListEl = document.getElementById("token-list");
   const countEl = document.getElementById("token-count");
+  const tokenExampleEl = document.getElementById("token-example");
+  const tokenExampleListEl = document.getElementById("token-example-list");
   const embeddingTitleEl = document.getElementById("embedding-title");
   const embeddingBarsEl = document.getElementById("embedding-bars");
   const attentionListEl = document.getElementById("attention-list");
@@ -122,6 +124,8 @@ window.addEventListener("DOMContentLoaded", () => {
     !inputEl ||
     !tokenListEl ||
     !countEl ||
+    !tokenExampleEl ||
+    !tokenExampleListEl ||
     !embeddingTitleEl ||
     !embeddingBarsEl ||
     !attentionListEl ||
@@ -301,6 +305,8 @@ window.addEventListener("DOMContentLoaded", () => {
     },
   ];
 
+  const tokenExampleText = "Hello, token world!";
+
   const tutorialSteps = [
     {
       id: "run",
@@ -408,6 +414,31 @@ window.addEventListener("DOMContentLoaded", () => {
 
       row.append(indexEl, typeEl, valueEl, rangeEl);
       tokenListEl.appendChild(row);
+    });
+  }
+
+  function renderTokenExample() {
+    tokenExampleEl.innerHTML = "";
+    tokenExampleListEl.innerHTML = "";
+    let exampleTokens = [];
+    try {
+      exampleTokens = tokenize(tokenExampleText);
+    } catch (err) {
+      const fallback = document.createElement("div");
+      fallback.textContent = "Token example unavailable.";
+      tokenExampleEl.appendChild(fallback);
+      return;
+    }
+
+    exampleTokens.forEach((token) => {
+      const chip = document.createElement("span");
+      chip.className = "token-boundary";
+      chip.textContent = token.value;
+      tokenExampleEl.appendChild(chip);
+
+      const listItem = document.createElement("span");
+      listItem.textContent = `${token.type}: "${token.value}"`;
+      tokenExampleListEl.appendChild(listItem);
     });
   }
 
@@ -2037,6 +2068,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
   renderScenario();
+  renderTokenExample();
   renderPromptLibrary();
   const storedPresets = localStorage.getItem("llm-edu:presets");
   if (storedPresets) {
