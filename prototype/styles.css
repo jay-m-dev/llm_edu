@@ -537,6 +537,12 @@ textarea {
   padding-top: 12px;
 }
 
+.context-explain {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
 .context-title {
   font-weight: 600;
   margin-bottom: 10px;
