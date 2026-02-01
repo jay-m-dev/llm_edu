@@ -218,6 +218,9 @@ window.addEventListener("DOMContentLoaded", () => {
     presets: [],
     useAltPrompt: false,
     generationSpeed: 1,
+    maxTokens: 120,
+    maxSteps: 80,
+    limitsHit: false,
   };
 
   const unlockRules = {
@@ -613,8 +616,15 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderFailureBanner() {
-    if (state.diagnostics.length === 0) {
+    if (state.diagnostics.length === 0 && !state.limitsHit) {
       failureBannerEl.hidden = true;
+      return;
+    }
+    if (state.limitsHit) {
+      failureTitleEl.textContent = "Run capped for performance";
+      failureCauseEl.textContent = "Cause: token or step limit reached.";
+      failureHintEl.textContent = "Try a shorter prompt or fewer steps.";
+      failureBannerEl.hidden = false;
       return;
     }
     const primary = state.diagnostics[0];
@@ -873,6 +883,12 @@ window.addEventListener("DOMContentLoaded", () => {
       stopGeneration();
       return;
     }
+    if (!state.sandboxMode && state.generationIndex >= state.maxSteps) {
+      state.limitsHit = true;
+      stopGeneration();
+      renderFailureBanner();
+      return;
+    }
     const token = state.tokens[state.generationIndex];
     const tokenWithIndex = { ...token, index: state.generationIndex };
     const distribution = buildStepDistribution(state.tokens, state.generationIndex, {
@@ -928,7 +944,13 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    state.tokens = tokens;
+    if (!state.sandboxMode && tokens.length > state.maxTokens) {
+      state.tokens = tokens.slice(0, state.maxTokens);
+      state.limitsHit = true;
+    } else {
+      state.tokens = tokens;
+      state.limitsHit = false;
+    }
     state.embeddings = tokens.map((token) => embedToken(token.value));
     const pipeline = applyPipeline(tokens);
     state.pipelineOutputs = pipeline.outputs;
