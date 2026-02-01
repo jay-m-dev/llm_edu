@@ -14,6 +14,7 @@ import { explanations } from "./explanations.js";
 import { findScenario, scenarios } from "./scenario.js";
 import { defaultPresets, hydratePresets } from "./presets.js";
 import { createClock } from "./clock.js";
+import { logEvent } from "./instrumentation.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -94,6 +95,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const settingsHintsEl = document.getElementById("settings-hints");
   const settingsAnimEl = document.getElementById("settings-anim");
   const settingsSoundEl = document.getElementById("settings-sound");
+  const settingsLogsEl = document.getElementById("settings-logs");
+  const logsListEl = document.getElementById("logs-list");
+  const logsClearEl = document.getElementById("logs-clear");
   const unlockToastEl = document.getElementById("unlock-toast");
   const failureBannerEl = document.getElementById("failure-banner");
   const failureTitleEl = document.querySelector(".failure-title");
@@ -185,6 +189,9 @@ window.addEventListener("DOMContentLoaded", () => {
     !settingsHintsEl ||
     !settingsAnimEl ||
     !settingsSoundEl ||
+    !settingsLogsEl ||
+    !logsListEl ||
+    !logsClearEl ||
     !unlockToastEl ||
     !failureBannerEl ||
     !failureTitleEl ||
@@ -248,7 +255,9 @@ window.addEventListener("DOMContentLoaded", () => {
       hints: true,
       animSpeed: 1,
       sound: false,
+      logs: true,
     },
+    logs: [],
   };
 
   const onboardingSteps = [
@@ -862,6 +871,46 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function renderLogs() {
+    logsListEl.innerHTML = "";
+    if (!state.settings.logs) {
+      const row = document.createElement("div");
+      row.className = "score-row";
+      row.textContent = "Logging is disabled.";
+      logsListEl.appendChild(row);
+      return;
+    }
+    if (state.logs.length === 0) {
+      const row = document.createElement("div");
+      row.className = "score-row";
+      row.textContent = "No events yet.";
+      logsListEl.appendChild(row);
+      return;
+    }
+    state.logs.forEach((entry) => {
+      const row = document.createElement("div");
+      row.className = "score-row";
+
+      const label = document.createElement("div");
+      label.textContent = `${entry.type} @ ${entry.time.split("T")[1].slice(0, 8)}`;
+
+      const valueEl = document.createElement("div");
+      valueEl.className = "score-value";
+      valueEl.textContent = entry.payload?.note || "";
+
+      row.append(label, document.createElement("div"), valueEl);
+      logsListEl.appendChild(row);
+    });
+  }
+
+  function recordEvent(type, payload) {
+    if (!state.settings.logs) {
+      return;
+    }
+    state.logs = logEvent(state.logs, type, payload);
+    renderLogs();
+  }
+
   function applySettings() {
     state.explainVisible = state.settings.hints;
     renderExplanation();
@@ -1089,6 +1138,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderFailureBanner();
     renderSaves();
     renderPresets();
+    renderLogs();
   }
 
   function buildRunSnapshot() {
@@ -1162,6 +1212,7 @@ window.addEventListener("DOMContentLoaded", () => {
   function saveRun() {
     const snapshot = buildRunSnapshot();
     localStorage.setItem("llm-edu:lastRun", JSON.stringify(snapshot));
+    recordEvent("run_complete", { note: "Recorded run" });
     if (!state.sandboxMode) {
       state.objectives = evaluateObjectives(snapshot);
       state.scores = scoreRun(snapshot);
@@ -1185,6 +1236,7 @@ window.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("llm-edu:saves", JSON.stringify(state.saves));
     savesMessageEl.textContent = `Saved: ${entry.name}`;
     renderSaves();
+    recordEvent("run_complete", { note: entry.name });
   }
 
   function loadSaves() {
@@ -1350,18 +1402,21 @@ window.addEventListener("DOMContentLoaded", () => {
     state.samplingDistribution = result.distribution;
     state.samplingSelectedIndex = result.selectedIndex;
     renderSampling();
+    recordEvent("run_step", { note: "Sample draw" });
   });
 
   runSaveEl.addEventListener("click", () => {
     state.replayMode = false;
     saveRun();
     renderSampling();
+    recordEvent("run_complete", { note: "Recorded run" });
   });
 
   runReplayEl.addEventListener("click", () => {
     replayRun();
     state.explainKey = "replay";
     renderExplanation();
+    recordEvent("replay_start", { note: "Replay load" });
   });
 
   objectivesEvaluateEl.addEventListener("click", () => {
@@ -1372,6 +1427,7 @@ window.addEventListener("DOMContentLoaded", () => {
     state.explainKey = "objectives";
     renderExplanation();
     renderScenario();
+    recordEvent("objective_eval", { note: "Objectives evaluated" });
   });
 
   diagnosticsEvaluateEl.addEventListener("click", () => {
@@ -1379,12 +1435,14 @@ window.addEventListener("DOMContentLoaded", () => {
     state.diagnostics = detectFailures(snapshot);
     renderDiagnostics();
     renderFailureBanner();
+    recordEvent("failure_detected", { note: `Failures: ${state.diagnostics.length}` });
   });
 
   scoresEvaluateEl.addEventListener("click", () => {
     const snapshot = buildRunSnapshot();
     state.scores = scoreRun(snapshot);
     renderScores();
+    recordEvent("run_complete", { note: "Scored run" });
   });
 
   scenarioSelectEl.addEventListener("change", () => {
@@ -1466,12 +1524,14 @@ window.addEventListener("DOMContentLoaded", () => {
     state.presets = [entry, ...state.presets].slice(0, 10);
     localStorage.setItem("llm-edu:presets", JSON.stringify(state.presets));
     renderPresets();
+    recordEvent("preset_applied", { note: entry.name });
   });
 
   settingsHintsEl.addEventListener("change", () => {
     state.settings.hints = settingsHintsEl.checked;
     applySettings();
     persistSettings();
+    recordEvent("settings_change", { note: "Hints toggled" });
   });
 
   settingsAnimEl.addEventListener("input", () => {
@@ -1479,15 +1539,24 @@ window.addEventListener("DOMContentLoaded", () => {
     state.settings.animSpeed = Number.isNaN(parsed) ? 1 : Math.max(parsed, 0.2);
     applySettings();
     persistSettings();
+    recordEvent("settings_change", { note: "Animation speed" });
   });
 
   settingsSoundEl.addEventListener("change", () => {
     state.settings.sound = settingsSoundEl.checked;
     persistSettings();
+    recordEvent("settings_change", { note: "Sound toggled" });
+  });
+
+  settingsLogsEl.addEventListener("change", () => {
+    state.settings.logs = settingsLogsEl.checked;
+    persistSettings();
+    renderLogs();
   });
 
   saveRunEl.addEventListener("click", () => {
     saveRunToList();
+    recordEvent("run_complete", { note: "Saved run" });
   });
 
   sandboxToggleEl.addEventListener("change", () => {
@@ -1506,6 +1575,7 @@ window.addEventListener("DOMContentLoaded", () => {
     state.replayTimer = setInterval(() => {
       stepReplay();
     }, interval);
+    recordEvent("replay_start", { note: "Replay play" });
   });
 
   replayPauseEl.addEventListener("click", () => {
@@ -1514,6 +1584,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   replayStepEl.addEventListener("click", () => {
     stepReplay();
+    recordEvent("replay_step", { note: `Replay step ${state.replayIndex}` });
   });
 
   replaySpeedEl.addEventListener("input", () => {
@@ -1543,15 +1614,18 @@ window.addEventListener("DOMContentLoaded", () => {
   generationPlayEl.addEventListener("click", () => {
     ensureClock();
     state.generationClock.start();
+    recordEvent("run_start", { note: "Generation play" });
   });
 
   generationPauseEl.addEventListener("click", () => {
     stopGeneration();
+    recordEvent("run_pause", { note: "Generation pause" });
   });
 
   generationStepEl.addEventListener("click", () => {
     ensureClock();
     state.generationClock.step();
+    recordEvent("run_step", { note: `Step ${state.generationIndex}` });
   });
 
   generationSpeedEl.addEventListener("input", () => {
@@ -1670,6 +1744,7 @@ window.addEventListener("DOMContentLoaded", () => {
   settingsHintsEl.checked = state.settings.hints;
   settingsAnimEl.value = String(state.settings.animSpeed);
   settingsSoundEl.checked = state.settings.sound;
+  settingsLogsEl.checked = state.settings.logs;
   applySettings();
   const onboardingDone = localStorage.getItem("llm-edu:onboarding") === "done";
   if (!onboardingDone) {

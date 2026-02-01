@@ -261,6 +261,18 @@
               <label class="context-label" for="settings-sound">Sound</label>
               <input id="settings-sound" type="checkbox" />
             </div>
+            <div class="context-controls">
+              <label class="context-label" for="settings-logs">Logging</label>
+              <input id="settings-logs" type="checkbox" checked />
+            </div>
+          </div>
+
+          <div id="logs-panel" class="generation-panel">
+            <div class="generation-header">
+              <div class="generation-title">Logs</div>
+              <button id="logs-clear" class="generation-button" type="button">Clear</button>
+            </div>
+            <div id="logs-list" class="scores-list"></div>
           </div>
         </section>
         <aside id="explain-panel" class="explain-panel">
