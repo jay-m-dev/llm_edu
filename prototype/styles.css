@@ -851,6 +851,35 @@ textarea {
   gap: 8px;
 }
 
+.progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progress-row {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e3e0d6;
+  background: #f8f6ef;
+  font-size: 12px;
+}
+
+.progress-status {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #a25a2b;
+}
+
+.progress-status.done {
+  color: #3a7a4e;
+}
+
 .breakdown-list {
   display: flex;
   flex-direction: column;

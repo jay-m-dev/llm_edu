@@ -79,6 +79,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const breakdownBodyEl = document.getElementById("breakdown-body");
   const breakdownListEl = document.getElementById("breakdown-list");
   const breakdownEmptyEl = document.getElementById("breakdown-empty");
+  const progressListEl = document.getElementById("progress-list");
   const scoresListEl = document.getElementById("scores-list");
   const scoresEvaluateEl = document.getElementById("scores-evaluate");
   const savesListEl = document.getElementById("saves-list");
@@ -196,6 +197,7 @@ window.addEventListener("DOMContentLoaded", () => {
     !breakdownBodyEl ||
     !breakdownListEl ||
     !breakdownEmptyEl ||
+    !progressListEl ||
     !scoresListEl ||
     !scoresEvaluateEl ||
     !savesListEl ||
@@ -312,6 +314,7 @@ window.addEventListener("DOMContentLoaded", () => {
     breakdownOpen: false,
     glossaryQuery: "",
     previousRun: null,
+    progress: {},
     settings: {
       hints: true,
       animSpeed: 1,
@@ -357,6 +360,29 @@ window.addEventListener("DOMContentLoaded", () => {
       id: "adjust",
       title: "Adjust a control",
       detail: "Change context size, temperature, or randomness.",
+    },
+  ];
+
+  const progressMilestones = [
+    {
+      id: "stable-sampling",
+      title: "Stable sampling",
+      detail: "Complete the stable sampling objective.",
+    },
+    {
+      id: "context-safe",
+      title: "Context keeper",
+      detail: "Complete the context safety objective.",
+    },
+    {
+      id: "focused-attention",
+      title: "Focused attention",
+      detail: "Complete the focused attention objective.",
+    },
+    {
+      id: "tutorial",
+      title: "Tutorial loop",
+      detail: "Finish the interactive tutorial steps.",
     },
   ];
 
@@ -1016,6 +1042,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     if (state.tutorialStep >= completions.length) {
       state.tutorialComplete = true;
+      updateProgressFromTutorial();
     }
 
     renderTutorial();
@@ -1184,6 +1211,57 @@ window.addEventListener("DOMContentLoaded", () => {
 
       row.append(title, def);
       glossaryListEl.appendChild(row);
+    });
+  }
+
+  function persistProgress() {
+    localStorage.setItem("llm-edu:progress", JSON.stringify(state.progress));
+  }
+
+  function updateProgressFromObjectives(objectives) {
+    if (!objectives || objectives.length === 0) {
+      return;
+    }
+    let changed = false;
+    objectives.forEach((objective) => {
+      if (objective.passed && !state.progress[objective.id]) {
+        state.progress[objective.id] = true;
+        changed = true;
+      }
+    });
+    if (changed) {
+      persistProgress();
+      renderProgress();
+    }
+  }
+
+  function updateProgressFromTutorial() {
+    if (state.tutorialComplete && !state.progress.tutorial) {
+      state.progress.tutorial = true;
+      persistProgress();
+      renderProgress();
+    }
+  }
+
+  function renderProgress() {
+    progressListEl.innerHTML = "";
+    progressMilestones.forEach((milestone) => {
+      const row = document.createElement("div");
+      row.className = "progress-row";
+
+      const status = document.createElement("div");
+      status.className = "progress-status";
+      const done = Boolean(state.progress[milestone.id]);
+      status.textContent = done ? "Done" : "Next";
+      if (done) {
+        status.classList.add("done");
+      }
+
+      const detail = document.createElement("div");
+      detail.textContent = `${milestone.title}: ${milestone.detail}`;
+
+      row.append(status, detail);
+      progressListEl.appendChild(row);
     });
   }
 
@@ -1740,6 +1818,7 @@ window.addEventListener("DOMContentLoaded", () => {
       state.objectives = evaluateObjectives(snapshot);
       state.scores = scoreRun(snapshot);
       applyUnlockResults(state.objectives);
+      updateProgressFromObjectives(state.objectives);
     }
     state.diagnostics = detectFailures(snapshot);
     renderObjectives();
@@ -1967,6 +2046,7 @@ window.addEventListener("DOMContentLoaded", () => {
     state.objectives = evaluateObjectives(snapshot);
     renderObjectives();
     applyUnlockResults(state.objectives);
+    updateProgressFromObjectives(state.objectives);
     state.explainKey = "objectives";
     renderExplanation();
     renderScenario();
@@ -2382,6 +2462,14 @@ window.addEventListener("DOMContentLoaded", () => {
       state.previousRun = null;
     }
   }
+  const storedProgress = localStorage.getItem("llm-edu:progress");
+  if (storedProgress) {
+    try {
+      state.progress = JSON.parse(storedProgress);
+    } catch (err) {
+      state.progress = {};
+    }
+  }
   settingsHintsEl.checked = state.settings.hints;
   settingsAnimEl.value = String(state.settings.animSpeed);
   settingsSoundEl.checked = state.settings.sound;
@@ -2398,6 +2486,7 @@ window.addEventListener("DOMContentLoaded", () => {
   renderExplanation();
   renderBreakdown();
   renderGlossary();
+  renderProgress();
 
   document.querySelectorAll("[data-tooltip]").forEach((element) => {
     element.classList.add("tooltip-target");
