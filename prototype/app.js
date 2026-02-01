@@ -15,6 +15,7 @@ import { findScenario, scenarios } from "./scenario.js";
 import { defaultPresets, hydratePresets } from "./presets.js";
 import { createClock } from "./clock.js";
 import { logEvent } from "./instrumentation.js";
+import { examplePrompts } from "./prompts.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -98,6 +99,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const settingsLogsEl = document.getElementById("settings-logs");
   const logsListEl = document.getElementById("logs-list");
   const logsClearEl = document.getElementById("logs-clear");
+  const promptListEl = document.getElementById("prompt-list");
+  const promptTryEl = document.getElementById("prompt-try");
   const ctaButtonEl = document.getElementById("cta-button");
   const ctaHelperEl = document.getElementById("cta-helper");
   const unlockToastEl = document.getElementById("unlock-toast");
@@ -194,6 +197,8 @@ window.addEventListener("DOMContentLoaded", () => {
     !settingsLogsEl ||
     !logsListEl ||
     !logsClearEl ||
+    !promptListEl ||
+    !promptTryEl ||
     !ctaButtonEl ||
     !ctaHelperEl ||
     !unlockToastEl ||
@@ -257,6 +262,7 @@ window.addEventListener("DOMContentLoaded", () => {
     limitsHit: false,
     onboardingStep: 0,
     advancedUnlocked: false,
+    selectedPromptIndex: 0,
     settings: {
       hints: true,
       animSpeed: 1,
@@ -848,6 +854,42 @@ window.addEventListener("DOMContentLoaded", () => {
     } else {
       scenarioObjectiveEl.textContent = `Objective: ${scenario.objectiveId} (not evaluated)`;
     }
+  }
+
+  function applyPrompt(index) {
+    const prompt = examplePrompts[index];
+    if (!prompt) {
+      return;
+    }
+    state.selectedPromptIndex = index;
+    inputEl.value = prompt.text;
+    inputEl.focus();
+    update();
+    renderPromptLibrary();
+  }
+
+  function renderPromptLibrary() {
+    promptListEl.innerHTML = "";
+    examplePrompts.forEach((prompt, index) => {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "prompt-row";
+      row.dataset.index = String(index);
+      if (index === state.selectedPromptIndex) {
+        row.classList.add("selected");
+      }
+
+      const label = document.createElement("div");
+      label.className = "prompt-label";
+      label.textContent = prompt.label;
+
+      const text = document.createElement("div");
+      text.className = "prompt-text";
+      text.textContent = prompt.text;
+
+      row.append(label, text);
+      promptListEl.appendChild(row);
+    });
   }
 
   function setOnboardingVisible(isVisible) {
@@ -1623,6 +1665,22 @@ window.addEventListener("DOMContentLoaded", () => {
     update();
   });
 
+  promptListEl.addEventListener("click", (event) => {
+    const target = event.target.closest(".prompt-row");
+    if (!target) {
+      return;
+    }
+    const index = Number(target.dataset.index);
+    if (Number.isNaN(index)) {
+      return;
+    }
+    applyPrompt(index);
+  });
+
+  promptTryEl.addEventListener("click", () => {
+    applyPrompt(state.selectedPromptIndex);
+  });
+
   presetSaveEl.addEventListener("click", () => {
     const name = `Preset ${new Date().toLocaleTimeString()}`;
     const entry = {
@@ -1851,6 +1909,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
   renderScenario();
+  renderPromptLibrary();
   const storedPresets = localStorage.getItem("llm-edu:presets");
   if (storedPresets) {
     try {
