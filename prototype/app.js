@@ -16,6 +16,7 @@ import { defaultPresets, hydratePresets } from "./presets.js";
 import { createClock } from "./clock.js";
 import { logEvent } from "./instrumentation.js";
 import { examplePrompts } from "./prompts.js";
+import { glossaryTerms } from "./glossary.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -116,6 +117,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const logsClearEl = document.getElementById("logs-clear");
   const promptListEl = document.getElementById("prompt-list");
   const promptTryEl = document.getElementById("prompt-try");
+  const glossaryListEl = document.getElementById("glossary-list");
+  const glossarySearchEl = document.getElementById("glossary-search");
   const ctaButtonEl = document.getElementById("cta-button");
   const ctaHelperEl = document.getElementById("cta-helper");
   const unlockToastEl = document.getElementById("unlock-toast");
@@ -229,6 +232,8 @@ window.addEventListener("DOMContentLoaded", () => {
     !logsClearEl ||
     !promptListEl ||
     !promptTryEl ||
+    !glossaryListEl ||
+    !glossarySearchEl ||
     !ctaButtonEl ||
     !ctaHelperEl ||
     !unlockToastEl ||
@@ -301,6 +306,7 @@ window.addEventListener("DOMContentLoaded", () => {
     failureSignature: null,
     breakdown: null,
     breakdownOpen: false,
+    glossaryQuery: "",
     settings: {
       hints: true,
       animSpeed: 1,
@@ -1135,6 +1141,45 @@ window.addEventListener("DOMContentLoaded", () => {
     });
     breakdownBodyEl.hidden = !state.breakdownOpen;
     breakdownToggleEl.textContent = state.breakdownOpen ? "Hide" : "Show";
+  }
+
+  function getFilteredGlossary() {
+    const query = state.glossaryQuery.trim().toLowerCase();
+    if (!query) {
+      return glossaryTerms;
+    }
+    return glossaryTerms.filter(
+      (entry) =>
+        entry.term.toLowerCase().includes(query) ||
+        entry.definition.toLowerCase().includes(query)
+    );
+  }
+
+  function renderGlossary() {
+    glossaryListEl.innerHTML = "";
+    const filtered = getFilteredGlossary();
+    if (filtered.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "sampling-result";
+      empty.textContent = "No matching terms.";
+      glossaryListEl.appendChild(empty);
+      return;
+    }
+    filtered.forEach((entry) => {
+      const row = document.createElement("div");
+      row.className = "glossary-term";
+      row.id = `glossary-${entry.id}`;
+
+      const title = document.createElement("div");
+      title.className = "glossary-term-title";
+      title.textContent = entry.term;
+
+      const def = document.createElement("div");
+      def.textContent = entry.definition;
+
+      row.append(title, def);
+      glossaryListEl.appendChild(row);
+    });
   }
 
   function applyPrompt(index) {
@@ -2040,6 +2085,22 @@ window.addEventListener("DOMContentLoaded", () => {
     renderBreakdown();
   });
 
+  glossarySearchEl.addEventListener("input", () => {
+    state.glossaryQuery = glossarySearchEl.value;
+    renderGlossary();
+  });
+
+  document.querySelectorAll("[data-glossary]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      const id = link.dataset.glossary;
+      const target = document.getElementById(`glossary-${id}`);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  });
+
   saveRunEl.addEventListener("click", () => {
     saveRunToList();
     recordEvent("run_complete", { note: "Saved run" });
@@ -2269,6 +2330,7 @@ window.addEventListener("DOMContentLoaded", () => {
   hallucinationToggleEl.checked = state.hallucinationEnabled;
   renderExplanation();
   renderBreakdown();
+  renderGlossary();
 
   document.querySelectorAll("[data-tooltip]").forEach((element) => {
     element.classList.add("tooltip-target");
