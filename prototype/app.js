@@ -251,6 +251,7 @@ window.addEventListener("DOMContentLoaded", () => {
     maxSteps: 80,
     limitsHit: false,
     onboardingStep: 0,
+    advancedUnlocked: false,
     settings: {
       hints: true,
       animSpeed: 1,
@@ -813,6 +814,7 @@ window.addEventListener("DOMContentLoaded", () => {
   function completeOnboarding() {
     localStorage.setItem("llm-edu:onboarding", "done");
     setOnboardingVisible(false);
+    unlockAdvancedControls("Advanced controls unlocked");
     state.scenarioId = "intro";
     scenarioSelectEl.value = "intro";
     const scenario = findScenario("intro");
@@ -944,6 +946,25 @@ window.addEventListener("DOMContentLoaded", () => {
     }, 2200);
   }
 
+  function applyAdvancedVisibility() {
+    const shouldShow = state.sandboxMode || state.advancedUnlocked;
+    document.querySelectorAll("[data-advanced]").forEach((element) => {
+      element.hidden = !shouldShow;
+    });
+  }
+
+  function unlockAdvancedControls(message) {
+    if (state.advancedUnlocked) {
+      return;
+    }
+    state.advancedUnlocked = true;
+    localStorage.setItem("llm-edu:advanced", "true");
+    applyAdvancedVisibility();
+    if (message) {
+      showUnlockToast(message);
+    }
+  }
+
   function applyLockState() {
     const inputs = {
       "context-size": contextSizeEl,
@@ -997,6 +1018,7 @@ window.addEventListener("DOMContentLoaded", () => {
       unlocked.forEach((key) => {
         showUnlockToast(`Unlocked: ${key.replace(/-/g, " ")}`);
       });
+      unlockAdvancedControls("Advanced controls unlocked");
     }
     applyLockState();
   }
@@ -1574,6 +1596,7 @@ window.addEventListener("DOMContentLoaded", () => {
     objectivesEvaluateEl.disabled = state.sandboxMode;
     scoresEvaluateEl.disabled = state.sandboxMode;
     applyLockState();
+    applyAdvancedVisibility();
   });
 
   replayPlayEl.addEventListener("click", () => {
@@ -1779,9 +1802,14 @@ window.addEventListener("DOMContentLoaded", () => {
       state.unlockState = { ...defaultUnlocks };
     }
   }
+  const storedAdvanced = localStorage.getItem("llm-edu:advanced");
+  if (storedAdvanced === "true") {
+    state.advancedUnlocked = true;
+  }
   sandboxToggleEl.checked = state.sandboxMode;
   sandboxBannerEl.hidden = !state.sandboxMode;
   applyLockState();
+  applyAdvancedVisibility();
   update();
 
   if (state.selectedStageId) {
