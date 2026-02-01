@@ -13,6 +13,7 @@ import { detectHallucinations } from "./hallucination.js";
 import { explanations } from "./explanations.js";
 import { findScenario, scenarios } from "./scenario.js";
 import { defaultPresets, hydratePresets } from "./presets.js";
+import { createClock } from "./clock.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const inputEl = document.getElementById("input");
@@ -44,6 +45,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const generationPlayEl = document.getElementById("generation-play");
   const generationPauseEl = document.getElementById("generation-pause");
   const generationStepEl = document.getElementById("generation-step-btn");
+  const generationSpeedEl = document.getElementById("generation-speed");
   const hallucinationToggleEl = document.getElementById("hallucination-toggle");
   const generationOutputEl = document.getElementById("generation-output");
   const generationStepCountEl = document.getElementById("generation-step");
@@ -123,6 +125,7 @@ window.addEventListener("DOMContentLoaded", () => {
     !generationPlayEl ||
     !generationPauseEl ||
     !generationStepEl ||
+    !generationSpeedEl ||
     !hallucinationToggleEl ||
     !generationOutputEl ||
     !generationStepCountEl ||
@@ -196,6 +199,7 @@ window.addEventListener("DOMContentLoaded", () => {
     generationTimer: null,
     generationDistributions: [],
     generationAttentionSteps: [],
+    generationClock: null,
     replaySnapshot: null,
     replayIndex: 0,
     replayTimer: null,
@@ -213,6 +217,7 @@ window.addEventListener("DOMContentLoaded", () => {
     scenarioId: scenarios[0].id,
     presets: [],
     useAltPrompt: false,
+    generationSpeed: 1,
   };
 
   const unlockRules = {
@@ -848,9 +853,8 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function stopGeneration() {
-    if (state.generationTimer) {
-      clearInterval(state.generationTimer);
-      state.generationTimer = null;
+    if (state.generationClock) {
+      state.generationClock.stop();
     }
   }
 
@@ -887,6 +891,18 @@ window.addEventListener("DOMContentLoaded", () => {
     );
     state.generationIndex += 1;
     renderGeneration();
+  }
+
+  function ensureClock() {
+    if (!state.generationClock) {
+      state.generationClock = createClock({
+        onTick: () => {
+          stepGeneration();
+        },
+        intervalMs: 300,
+      });
+    }
+    state.generationClock.setSpeed(state.generationSpeed);
   }
 
   function updateSamplingDistribution() {
@@ -1367,12 +1383,8 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   generationPlayEl.addEventListener("click", () => {
-    if (state.generationTimer) {
-      return;
-    }
-    state.generationTimer = setInterval(() => {
-      stepGeneration();
-    }, 300);
+    ensureClock();
+    state.generationClock.start();
   });
 
   generationPauseEl.addEventListener("click", () => {
@@ -1380,7 +1392,16 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   generationStepEl.addEventListener("click", () => {
-    stepGeneration();
+    ensureClock();
+    state.generationClock.step();
+  });
+
+  generationSpeedEl.addEventListener("input", () => {
+    const parsed = Number.parseFloat(generationSpeedEl.value);
+    state.generationSpeed = Number.isNaN(parsed) ? 1 : Math.max(parsed, 0.2);
+    if (state.generationClock) {
+      state.generationClock.setSpeed(state.generationSpeed);
+    }
   });
 
   hallucinationToggleEl.addEventListener("change", () => {
@@ -1429,6 +1450,7 @@ window.addEventListener("DOMContentLoaded", () => {
   samplingRandomEl.value = String(state.samplingRandom);
   samplingRandomSliderEl.value = String(state.samplingRandom);
   samplingRandomValueEl.textContent = state.samplingRandom.toFixed(2);
+  generationSpeedEl.value = String(state.generationSpeed);
   replaySpeedEl.value = String(state.replaySpeed);
   state.objectives = getObjectives().map((objective) => ({
     id: objective.id,

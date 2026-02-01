@@ -129,6 +129,8 @@
               <button id="generation-play" class="generation-button" type="button" data-tooltip="Play token generation automatically.">Play</button>
               <button id="generation-pause" class="generation-button" type="button" data-tooltip="Pause token generation.">Pause</button>
               <button id="generation-step-btn" class="generation-button" type="button" data-tooltip="Advance by one token.">Step</button>
+              <label class="sampling-label" for="generation-speed">Speed</label>
+              <input id="generation-speed" class="sampling-input" type="number" step="0.1" min="0.2" value="1" />
               <label class="sampling-label" for="hallucination-toggle" data-tooltip="Flags low-probability tokens as risky guesses.">Hallucination flags</label>
               <input id="hallucination-toggle" type="checkbox" checked />
             </div>
