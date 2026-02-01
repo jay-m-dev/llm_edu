@@ -50,6 +50,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const generationPlayEl = document.getElementById("generation-play");
   const generationPauseEl = document.getElementById("generation-pause");
   const generationStepEl = document.getElementById("generation-step-btn");
+  const runResetEl = document.getElementById("run-reset");
+  const runUndoEl = document.getElementById("run-undo");
   const generationSpeedEl = document.getElementById("generation-speed");
   const hallucinationToggleEl = document.getElementById("hallucination-toggle");
   const generationOutputEl = document.getElementById("generation-output");
@@ -165,6 +167,8 @@ window.addEventListener("DOMContentLoaded", () => {
     !generationPlayEl ||
     !generationPauseEl ||
     !generationStepEl ||
+    !runResetEl ||
+    !runUndoEl ||
     !generationSpeedEl ||
     !hallucinationToggleEl ||
     !generationOutputEl ||
@@ -307,6 +311,7 @@ window.addEventListener("DOMContentLoaded", () => {
     breakdown: null,
     breakdownOpen: false,
     glossaryQuery: "",
+    previousRun: null,
     settings: {
       hints: true,
       animSpeed: 1,
@@ -1479,6 +1484,39 @@ window.addEventListener("DOMContentLoaded", () => {
     renderGeneration();
   }
 
+  function resetRun() {
+    stopGeneration();
+    state.generatedTokens = [];
+    state.generationDistributions = [];
+    state.generationAttentionSteps = [];
+    state.generationIndex = 0;
+    state.replayMode = false;
+    state.replaySnapshot = null;
+    state.replayIndex = 0;
+    state.diagnostics = [];
+    state.scores = [];
+    state.limitsHit = false;
+    renderGeneration();
+    renderReplay();
+    renderDiagnostics();
+    renderScores();
+    renderFailureBanner();
+  }
+
+  function loadPreviousRun() {
+    if (!state.previousRun) {
+      return;
+    }
+    stopGeneration();
+    applyRunSnapshot(state.previousRun);
+    state.replayMode = false;
+    state.replaySnapshot = null;
+    state.replayIndex = 0;
+    renderReplay();
+    renderGeneration();
+    renderFailureBanner();
+  }
+
   function stepGeneration() {
     if (state.generationIndex >= state.tokens.length) {
       stopGeneration();
@@ -1708,6 +1746,15 @@ window.addEventListener("DOMContentLoaded", () => {
     renderDiagnostics();
     renderScores();
     renderFailureBanner();
+    const raw = localStorage.getItem("llm-edu:previousRun");
+    if (raw) {
+      try {
+        state.previousRun = JSON.parse(raw);
+      } catch (err) {
+        state.previousRun = null;
+      }
+    }
+    localStorage.setItem("llm-edu:previousRun", JSON.stringify(snapshot));
   }
 
   function saveRunToList() {
@@ -2085,6 +2132,18 @@ window.addEventListener("DOMContentLoaded", () => {
     renderBreakdown();
   });
 
+  runResetEl.addEventListener("click", () => {
+    const confirmed = window.confirm("Reset this run? This only clears the current output.");
+    if (!confirmed) {
+      return;
+    }
+    resetRun();
+  });
+
+  runUndoEl.addEventListener("click", () => {
+    loadPreviousRun();
+  });
+
   glossarySearchEl.addEventListener("input", () => {
     state.glossaryQuery = glossarySearchEl.value;
     renderGlossary();
@@ -2313,6 +2372,14 @@ window.addEventListener("DOMContentLoaded", () => {
       state.breakdown = JSON.parse(storedBreakdown);
     } catch (err) {
       state.breakdown = null;
+    }
+  }
+  const storedPreviousRun = localStorage.getItem("llm-edu:previousRun");
+  if (storedPreviousRun) {
+    try {
+      state.previousRun = JSON.parse(storedPreviousRun);
+    } catch (err) {
+      state.previousRun = null;
     }
   }
   settingsHintsEl.checked = state.settings.hints;
