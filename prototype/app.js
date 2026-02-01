@@ -72,6 +72,10 @@ window.addEventListener("DOMContentLoaded", () => {
   const objectivesEvaluateEl = document.getElementById("objectives-evaluate");
   const diagnosticsListEl = document.getElementById("diagnostics-list");
   const diagnosticsEvaluateEl = document.getElementById("diagnostics-evaluate");
+  const breakdownToggleEl = document.getElementById("breakdown-toggle");
+  const breakdownBodyEl = document.getElementById("breakdown-body");
+  const breakdownListEl = document.getElementById("breakdown-list");
+  const breakdownEmptyEl = document.getElementById("breakdown-empty");
   const scoresListEl = document.getElementById("scores-list");
   const scoresEvaluateEl = document.getElementById("scores-evaluate");
   const savesListEl = document.getElementById("saves-list");
@@ -181,6 +185,10 @@ window.addEventListener("DOMContentLoaded", () => {
     !objectivesEvaluateEl ||
     !diagnosticsListEl ||
     !diagnosticsEvaluateEl ||
+    !breakdownToggleEl ||
+    !breakdownBodyEl ||
+    !breakdownListEl ||
+    !breakdownEmptyEl ||
     !scoresListEl ||
     !scoresEvaluateEl ||
     !savesListEl ||
@@ -291,6 +299,8 @@ window.addEventListener("DOMContentLoaded", () => {
     tutorialComplete: false,
     failureOverlayDismissed: false,
     failureSignature: null,
+    breakdown: null,
+    breakdownOpen: false,
     settings: {
       hints: true,
       animSpeed: 1,
@@ -1047,6 +1057,86 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function buildBreakdown(snapshot) {
+    const tokens = snapshot.tokens || [];
+    const generated = snapshot.generatedTokens || [];
+    const contextActive = snapshot.contextActive || [];
+    const contextDropped = snapshot.contextDropped || [];
+    const temp = Number.isFinite(snapshot.samplingTemp) ? snapshot.samplingTemp : 1;
+    const randomness = Number.isFinite(snapshot.samplingRandom) ? snapshot.samplingRandom : 0;
+
+    let focusToken = null;
+    const attentionSteps = snapshot.generationAttentionSteps || [];
+    if (attentionSteps.length > 0) {
+      const last = attentionSteps[attentionSteps.length - 1];
+      let maxIndex = 0;
+      let maxValue = -Infinity;
+      last.forEach((value, index) => {
+        if (value > maxValue) {
+          maxValue = value;
+          maxIndex = index;
+        }
+      });
+      focusToken = tokens[maxIndex]?.value ?? null;
+    } else if (snapshot.attentionWeights && snapshot.attentionWeights.length > 0) {
+      let maxIndex = 0;
+      let maxValue = -Infinity;
+      snapshot.attentionWeights.forEach((value, index) => {
+        if (value > maxValue) {
+          maxValue = value;
+          maxIndex = index;
+        }
+      });
+      focusToken = tokens[maxIndex]?.value ?? null;
+    }
+
+    const bullets = [];
+    bullets.push(
+      `Generated ${generated.length} tokens from ${tokens.length} input tokens.`
+    );
+    bullets.push(
+      `Context kept ${contextActive.length} tokens and dropped ${contextDropped.length}.`
+    );
+    bullets.push(
+      `Sampling used temperature ${temp.toFixed(1)} and randomness ${randomness.toFixed(2)}.`
+    );
+    if (focusToken) {
+      bullets.push(`Strongest attention focused on "${focusToken}".`);
+    }
+    return bullets;
+  }
+
+  function persistBreakdown() {
+    if (!state.breakdown) {
+      return;
+    }
+    localStorage.setItem("llm-edu:breakdown", JSON.stringify(state.breakdown));
+  }
+
+  function updateBreakdown(snapshot) {
+    const bullets = buildBreakdown(snapshot);
+    state.breakdown = {
+      bullets,
+      updatedAt: new Date().toISOString(),
+    };
+    persistBreakdown();
+    renderBreakdown();
+  }
+
+  function renderBreakdown() {
+    breakdownListEl.innerHTML = "";
+    const bullets = state.breakdown?.bullets || [];
+    breakdownEmptyEl.hidden = bullets.length > 0;
+    bullets.forEach((text) => {
+      const row = document.createElement("div");
+      row.className = "breakdown-row";
+      row.textContent = text;
+      breakdownListEl.appendChild(row);
+    });
+    breakdownBodyEl.hidden = !state.breakdownOpen;
+    breakdownToggleEl.textContent = state.breakdownOpen ? "Hide" : "Show";
+  }
+
   function applyPrompt(index) {
     const prompt = examplePrompts[index];
     if (!prompt) {
@@ -1373,6 +1463,9 @@ window.addEventListener("DOMContentLoaded", () => {
     );
     state.generationIndex += 1;
     renderGeneration();
+    if (state.generationIndex >= state.tokens.length) {
+      updateBreakdown(buildRunSnapshot());
+    }
   }
 
   function ensureClock() {
@@ -1558,6 +1651,7 @@ window.addEventListener("DOMContentLoaded", () => {
   function saveRun() {
     const snapshot = buildRunSnapshot();
     localStorage.setItem("llm-edu:lastRun", JSON.stringify(snapshot));
+    updateBreakdown(snapshot);
     recordEvent("run_complete", { note: "Recorded run" });
     if (!state.sandboxMode) {
       state.objectives = evaluateObjectives(snapshot);
@@ -1941,6 +2035,11 @@ window.addEventListener("DOMContentLoaded", () => {
     renderLogs();
   });
 
+  breakdownToggleEl.addEventListener("click", () => {
+    state.breakdownOpen = !state.breakdownOpen;
+    renderBreakdown();
+  });
+
   saveRunEl.addEventListener("click", () => {
     saveRunToList();
     recordEvent("run_complete", { note: "Saved run" });
@@ -2147,6 +2246,14 @@ window.addEventListener("DOMContentLoaded", () => {
       // Ignore malformed settings.
     }
   }
+  const storedBreakdown = localStorage.getItem("llm-edu:breakdown");
+  if (storedBreakdown) {
+    try {
+      state.breakdown = JSON.parse(storedBreakdown);
+    } catch (err) {
+      state.breakdown = null;
+    }
+  }
   settingsHintsEl.checked = state.settings.hints;
   settingsAnimEl.value = String(state.settings.animSpeed);
   settingsSoundEl.checked = state.settings.sound;
@@ -2161,6 +2268,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   hallucinationToggleEl.checked = state.hallucinationEnabled;
   renderExplanation();
+  renderBreakdown();
 
   document.querySelectorAll("[data-tooltip]").forEach((element) => {
     element.classList.add("tooltip-target");

@@ -851,6 +851,21 @@ textarea {
   gap: 8px;
 }
 
+.breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.breakdown-row {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e3e0d6;
+  background: #f8f6ef;
+  font-size: 12px;
+}
+
 .score-row {
   display: grid;
   grid-template-columns: 120px 1fr 50px;
