@@ -98,6 +98,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const settingsLogsEl = document.getElementById("settings-logs");
   const logsListEl = document.getElementById("logs-list");
   const logsClearEl = document.getElementById("logs-clear");
+  const ctaButtonEl = document.getElementById("cta-button");
+  const ctaHelperEl = document.getElementById("cta-helper");
   const unlockToastEl = document.getElementById("unlock-toast");
   const failureBannerEl = document.getElementById("failure-banner");
   const failureTitleEl = document.querySelector(".failure-title");
@@ -192,6 +194,8 @@ window.addEventListener("DOMContentLoaded", () => {
     !settingsLogsEl ||
     !logsListEl ||
     !logsClearEl ||
+    !ctaButtonEl ||
+    !ctaHelperEl ||
     !unlockToastEl ||
     !failureBannerEl ||
     !failureTitleEl ||
@@ -229,6 +233,7 @@ window.addEventListener("DOMContentLoaded", () => {
     generationDistributions: [],
     generationAttentionSteps: [],
     generationClock: null,
+    generationRunning: false,
     replaySnapshot: null,
     replayIndex: 0,
     replayTimer: null,
@@ -591,6 +596,7 @@ window.addEventListener("DOMContentLoaded", () => {
         attentionHeatmapLabelsEl.appendChild(label);
       });
     }
+    renderCTA();
   }
 
   function renderExplanation() {
@@ -599,10 +605,54 @@ window.addEventListener("DOMContentLoaded", () => {
     explainPanelEl.classList.toggle("hidden", !state.explainVisible);
     explainToggleEl.textContent = state.explainVisible ? "Hide" : "Show";
   }
+
+  function renderCTA() {
+    const hasReplay = Boolean(state.replayMode);
+    if (hasReplay) {
+      const replayDone =
+        !state.replaySnapshot ||
+        state.replayIndex >= state.replaySnapshot.generatedTokens.length;
+      if (state.replayTimer) {
+        ctaButtonEl.dataset.action = "pause-replay";
+        ctaButtonEl.textContent = "Pause Replay";
+        ctaHelperEl.textContent = "Replay is running.";
+        return;
+      }
+      if (replayDone) {
+        ctaButtonEl.dataset.action = "exit-replay";
+        ctaButtonEl.textContent = "Exit Replay";
+        ctaHelperEl.textContent = "Replay finished.";
+        return;
+      }
+      ctaButtonEl.dataset.action = "play-replay";
+      ctaButtonEl.textContent = "Play Replay";
+      ctaHelperEl.textContent = "Continue the recorded run.";
+      return;
+    }
+
+    if (state.generationRunning) {
+      ctaButtonEl.dataset.action = "pause-run";
+      ctaButtonEl.textContent = "Pause Run";
+      ctaHelperEl.textContent = "Token generation is running.";
+      return;
+    }
+
+    if (state.generatedTokens.length > 0 && state.generationIndex < state.tokens.length) {
+      ctaButtonEl.dataset.action = "start-run";
+      ctaButtonEl.textContent = "Continue Run";
+      ctaHelperEl.textContent = "Resume token generation.";
+      return;
+    }
+
+    ctaButtonEl.dataset.action = "start-run";
+    ctaButtonEl.textContent = "Start Run";
+    ctaHelperEl.textContent = "Start a run to see tokens generate.";
+  }
   function renderReplay() {
     replayOutputEl.innerHTML = "";
     if (!state.replaySnapshot) {
       replayStatusEl.textContent = "Idle";
+      renderCTA();
       return;
     }
     replayStatusEl.textContent = `Replaying step ${state.replayIndex}/${state.replaySnapshot.generatedTokens.length}`;
@@ -613,6 +663,7 @@ window.addEventListener("DOMContentLoaded", () => {
       chip.textContent = token.value;
       replayOutputEl.appendChild(chip);
     });
+    renderCTA();
   }
 
   function renderObjectives() {
@@ -1027,6 +1078,7 @@ window.addEventListener("DOMContentLoaded", () => {
       clearInterval(state.replayTimer);
       state.replayTimer = null;
     }
+    renderCTA();
   }
 
   function stepReplay() {
@@ -1045,6 +1097,8 @@ window.addEventListener("DOMContentLoaded", () => {
     if (state.generationClock) {
       state.generationClock.stop();
     }
+    state.generationRunning = false;
+    renderCTA();
   }
 
   function resetGeneration() {
@@ -1098,6 +1152,34 @@ window.addEventListener("DOMContentLoaded", () => {
       });
     }
     state.generationClock.setSpeed(state.generationSpeed);
+  }
+
+  function startGeneration() {
+    ensureClock();
+    state.generationRunning = true;
+    state.generationClock.start();
+    renderCTA();
+  }
+
+  function startReplay() {
+    if (!state.replaySnapshot || state.replayTimer) {
+      return;
+    }
+    const interval = Math.max(50, 400 / state.replaySpeed);
+    state.replayTimer = setInterval(() => {
+      stepReplay();
+    }, interval);
+    renderCTA();
+  }
+
+  function exitReplay() {
+    stopReplay();
+    state.replayMode = false;
+    state.replaySnapshot = null;
+    state.replayIndex = 0;
+    replayOutputEl.innerHTML = "";
+    replayStatusEl.textContent = "Idle";
+    renderCTA();
   }
 
   function updateSamplingDistribution() {
@@ -1599,14 +1681,36 @@ window.addEventListener("DOMContentLoaded", () => {
     applyAdvancedVisibility();
   });
 
-  replayPlayEl.addEventListener("click", () => {
-    if (!state.replaySnapshot || state.replayTimer) {
+  ctaButtonEl.addEventListener("click", () => {
+    const action = ctaButtonEl.dataset.action;
+    if (action === "pause-run") {
+      stopGeneration();
+      recordEvent("run_pause", { note: "CTA pause" });
       return;
     }
-    const interval = Math.max(50, 400 / state.replaySpeed);
-    state.replayTimer = setInterval(() => {
-      stepReplay();
-    }, interval);
+    if (action === "start-run") {
+      startGeneration();
+      recordEvent("run_start", { note: "CTA play" });
+      return;
+    }
+    if (action === "pause-replay") {
+      stopReplay();
+      recordEvent("replay_pause", { note: "CTA pause" });
+      return;
+    }
+    if (action === "play-replay") {
+      startReplay();
+      recordEvent("replay_start", { note: "CTA play" });
+      return;
+    }
+    if (action === "exit-replay") {
+      exitReplay();
+      recordEvent("replay_exit", { note: "CTA exit" });
+    }
+  });
+
+  replayPlayEl.addEventListener("click", () => {
+    startReplay();
     recordEvent("replay_start", { note: "Replay play" });
   });
 
@@ -1628,12 +1732,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   replayExitEl.addEventListener("click", () => {
-    stopReplay();
-    state.replayMode = false;
-    state.replaySnapshot = null;
-    state.replayIndex = 0;
-    replayOutputEl.innerHTML = "";
-    replayStatusEl.textContent = "Idle";
+    exitReplay();
   });
 
   failureRetryEl.addEventListener("click", () => {
@@ -1644,8 +1743,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   generationPlayEl.addEventListener("click", () => {
-    ensureClock();
-    state.generationClock.start();
+    startGeneration();
     recordEvent("run_start", { note: "Generation play" });
   });
 
