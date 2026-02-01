@@ -821,6 +821,32 @@ textarea {
   display: none;
 }
 
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 15, 15, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.onboarding-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  width: min(420px, 90vw);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  display: grid;
+  gap: 10px;
+}
+
+.onboarding-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .tooltip-target {
   position: relative;
   outline: none;

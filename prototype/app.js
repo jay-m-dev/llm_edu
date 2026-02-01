@@ -73,6 +73,11 @@ window.addEventListener("DOMContentLoaded", () => {
   const savesListEl = document.getElementById("saves-list");
   const saveRunEl = document.getElementById("save-run");
   const savesMessageEl = document.getElementById("saves-message");
+  const onboardingEl = document.getElementById("onboarding");
+  const onboardingStepEl = document.getElementById("onboarding-step");
+  const onboardingBodyEl = document.getElementById("onboarding-body");
+  const onboardingSkipEl = document.getElementById("onboarding-skip");
+  const onboardingNextEl = document.getElementById("onboarding-next");
   const scenarioSelectEl = document.getElementById("scenario-select");
   const scenarioResetEl = document.getElementById("scenario-reset");
   const scenarioToggleEl = document.getElementById("scenario-toggle");
@@ -153,6 +158,11 @@ window.addEventListener("DOMContentLoaded", () => {
     !savesListEl ||
     !saveRunEl ||
     !savesMessageEl ||
+    !onboardingEl ||
+    !onboardingStepEl ||
+    !onboardingBodyEl ||
+    !onboardingSkipEl ||
+    !onboardingNextEl ||
     !scenarioSelectEl ||
     !scenarioResetEl ||
     !scenarioToggleEl ||
@@ -221,7 +231,27 @@ window.addEventListener("DOMContentLoaded", () => {
     maxTokens: 120,
     maxSteps: 80,
     limitsHit: false,
+    onboardingStep: 0,
   };
+
+  const onboardingSteps = [
+    {
+      title: "Welcome",
+      body: "Run small experiments, inspect output, and iterate quickly.",
+    },
+    {
+      title: "Generate",
+      body: "Press Play or Step to see tokens appear one at a time.",
+    },
+    {
+      title: "Inspect",
+      body: "Use the panels to see attention, probabilities, and context.",
+    },
+    {
+      title: "Adjust",
+      body: "Change parameters to make the run more stable or more playful.",
+    },
+  ];
 
   const unlockRules = {
     "context-safe": "context-size",
@@ -726,6 +756,31 @@ window.addEventListener("DOMContentLoaded", () => {
     } else {
       scenarioObjectiveEl.textContent = `Objective: ${scenario.objectiveId} (not evaluated)`;
     }
+  }
+
+  function renderOnboarding() {
+    const step = onboardingSteps[state.onboardingStep];
+    onboardingStepEl.textContent = step.title;
+    onboardingBodyEl.textContent = step.body;
+  }
+
+  function completeOnboarding() {
+    localStorage.setItem("llm-edu:onboarding", "done");
+    onboardingEl.hidden = true;
+    state.scenarioId = "intro";
+    scenarioSelectEl.value = "intro";
+    const scenario = findScenario("intro");
+    inputEl.value = scenario.prompt;
+    if (scenario.params) {
+      state.contextSize = scenario.params.contextSize;
+      state.samplingTemp = scenario.params.samplingTemp;
+      state.samplingRandom = scenario.params.samplingRandom;
+      if (Number.isFinite(scenario.params.samplingSeed)) {
+        state.samplingSeed = scenario.params.samplingSeed;
+      }
+    }
+    renderScenario();
+    update();
   }
 
   function renderPresets() {
@@ -1323,6 +1378,19 @@ window.addEventListener("DOMContentLoaded", () => {
     update();
   });
 
+  onboardingNextEl.addEventListener("click", () => {
+    state.onboardingStep += 1;
+    if (state.onboardingStep >= onboardingSteps.length) {
+      completeOnboarding();
+      return;
+    }
+    renderOnboarding();
+  });
+
+  onboardingSkipEl.addEventListener("click", () => {
+    completeOnboarding();
+  });
+
   promptToggleEl.addEventListener("click", () => {
     const scenario = findScenario(state.scenarioId);
     if (!scenario.promptAlt) {
@@ -1523,6 +1591,12 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   renderPresets();
   loadSaves();
+  const onboardingDone = localStorage.getItem("llm-edu:onboarding") === "done";
+  if (!onboardingDone) {
+    state.onboardingStep = 0;
+    onboardingEl.hidden = false;
+    renderOnboarding();
+  }
   hallucinationToggleEl.checked = state.hallucinationEnabled;
   renderExplanation();
 

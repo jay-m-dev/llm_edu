@@ -8,6 +8,16 @@
   </head>
   <body>
     <div class="container">
+      <div id="onboarding" class="onboarding-overlay" hidden>
+        <div class="onboarding-modal">
+          <div id="onboarding-step" class="generation-title"></div>
+          <div id="onboarding-body" class="sampling-result"></div>
+          <div class="onboarding-actions">
+            <button id="onboarding-skip" class="generation-button" type="button">Skip</button>
+            <button id="onboarding-next" class="generation-button" type="button">Next</button>
+          </div>
+        </div>
+      </div>
       <header>
         <h1>Tokenizer Prototype</h1>
         <p class="lede">A minimal, deterministic tokenizer with a visual token list.</p>
