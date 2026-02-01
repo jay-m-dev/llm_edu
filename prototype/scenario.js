@@ -27,8 +27,18 @@ export const scenarios = [
     intro: "Adjust randomness to see output stabilize or drift. Compare two runs back-to-back.",
     objectiveId: "focused-attention",
     failureHint: "Reduce randomness or tighten the prompt to improve focus.",
-    params: { contextSize: 12, samplingTemp: 1.2, samplingRandom: 0.35 },
+    params: { contextSize: 12, samplingTemp: 1.2, samplingRandom: 0.35, samplingSeed: 5151 },
     prompt: "Describe a playful robot with one surprising detail.",
+  },
+  {
+    id: "hallucination-tradeoff",
+    name: "Hallucination Tradeoff",
+    summary: "See accuracy vs creativity tension under high randomness.",
+    intro: "Start with high randomness and watch hallucination flags appear. Lower randomness to stabilize the output.",
+    objectiveId: "stable-sampling",
+    failureHint: "Drop randomness below 0.2 to reduce hallucination flags.",
+    params: { contextSize: 14, samplingTemp: 1.6, samplingRandom: 0.6, samplingSeed: 9001 },
+    prompt: "List three facts about a fictional planet. Keep them consistent.",
   },
 ];
 
